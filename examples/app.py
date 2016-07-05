@@ -38,9 +38,13 @@ from __future__ import absolute_import, print_function
 from flask import Flask
 from flask_babelex import Babel
 
+from invenio_indexer import InvenioIndexer
+from invenio_search import InvenioSearch
 from invenio_trends import InvenioTrends
 
 # Create Flask application
 app = Flask(__name__)
 Babel(app)
+InvenioIndexer(app)
+InvenioSearch(app)
 InvenioTrends(app)
