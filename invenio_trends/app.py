@@ -29,8 +29,9 @@ Run example development server:
 
 .. code-block:: console
 
-   $ cd examples
-   $ flask -a app.py --debug run
+   $ export FLASK_APP=invenio_trends/app.py
+   $ export DEBUG=1
+   $ flask run
 """
 
 from __future__ import absolute_import, print_function
