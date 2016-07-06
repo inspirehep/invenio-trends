@@ -46,7 +46,7 @@
             $scope.operation = operation;
 
             $scope.modal = $uibModal.open({
-              templateUrl: '/static/js/invenio_trends_ui/templates/modals/batch_' + operation + '_modal.html'
+              templateUrl: '/static/js/invenio_trends/templates/modals/batch_' + operation + '_modal.html'
             });
           },
 
@@ -73,7 +73,7 @@
             for (var select_record_idx in $scope.vm.selected_records) {
               HoldingPenRecordService.deleteRecord($scope.vm, $scope.vm.selected_records[select_record_idx], false);
             }
-            window.location = '/holdingpen/list';
+            window.location = '/src/list';
             $scope.vm.batch_message = $scope.vm.selected_records.length + " workflows deleted.";
             $scope.modal.dismiss('cancel');
           }
@@ -239,7 +239,7 @@
 
     var controller = ["$scope", "$http",
       function ($scope, $http) {
-        $http.get('/api/holdingpen/?' + $scope.primaryFilterKey + '=' + $scope.primaryFilterValue)
+        $http.get('/api/src/?' + $scope.primaryFilterKey + '=' + $scope.primaryFilterValue)
           .then(function (response) {
             $scope.vm = $scope;
             $scope.vm.total = response.data.hits.total;

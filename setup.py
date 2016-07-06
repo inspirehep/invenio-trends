@@ -47,6 +47,12 @@ extras_require = {
         'Sphinx>=1.4.2',
     ],
     'tests': tests_require,
+    'development': [
+        'Flask-DebugToolbar>=0.9',
+        'ipython',
+        'honcho',
+        'gunicorn'
+    ],
 }
 
 extras_require['all'] = []
@@ -97,7 +103,9 @@ setup(
         # TODO: Edit these entry points to fit your needs.
         # 'invenio_access.actions': [],
         # 'invenio_admin.actions': [],
-        # 'invenio_assets.bundles': [],
+        'invenio_assets.bundles': [
+            'invenio_trends_js = invenio_trends.bundles:js',
+        ],
         # 'invenio_base.api_apps': [],
         # 'invenio_base.api_blueprints': [],
         # 'invenio_base.blueprints': [],

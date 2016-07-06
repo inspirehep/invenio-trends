@@ -26,10 +26,10 @@
   var invenioHoldingPen = angular.module("invenioHoldingPen", ['xeditable',
     'ui.bootstrap',
     'fps.hotkeys',
-    'holdingpen.services',
-    'holdingpen.directives',
-    'holdingpen.controllers',
-    'holdingpen.filters.abstract',
+    'src.services',
+    'src.directives',
+    'src.controllers',
+    'src.filters.abstract',
     'angular.filter'
   ]);
 

@@ -23,29 +23,18 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 
-"""Minimal Flask application example for development.
+"""Bundles for forms used across INSPIRE."""
 
-Run example development server:
+from invenio_assets import NpmBundle
+from invenio_assets.filters import RequireJSFilter
 
-.. code-block:: console
+from inspirehep.modules.theme.bundles import js as _js
 
-   $ export FLASK_APP=invenio_trends/src.py
-   $ export DEBUG=1
-   $ flask run
-"""
-
-from __future__ import absolute_import, print_function
-
-from flask import Flask
-from flask_babelex import Babel
-
-from invenio_indexer import InvenioIndexer
-from invenio_search import InvenioSearch
-from invenio_trends import InvenioTrends
-
-# Create Flask application
-app = Flask(__name__)
-Babel(app)
-InvenioIndexer(app)
-InvenioSearch(app)
-InvenioTrends(app)
+js = NpmBundle(
+    "js/invenio_trends/src/app.js",
+    output="gen/invenio_trends.%(version)s.js",
+    filters=RequireJSFilter(exclude=[_js]),
+    npm={
+        "angular": "~1.5.7"
+    }
+)

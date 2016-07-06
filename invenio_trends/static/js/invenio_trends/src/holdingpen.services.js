@@ -33,7 +33,7 @@
           return {
 
             getRecord: function (vm, workflowId) {
-              $http.get('/api/holdingpen/' + workflowId).then(function (response) {
+              $http.get('/api/src/' + workflowId).then(function (response) {
                 vm.record = response.data;
                 if (vm.record._workflow.data_type == 'authors') {
                   $('#breadcrumb').html(vm.record.metadata.name.value);
@@ -47,7 +47,7 @@
             },
 
             updateRecord: function (vm, workflowId) {
-              $http.post('/api/holdingpen/' + workflowId + '/action/edit', vm.record).then(function (response) {
+              $http.post('/api/src/' + workflowId + '/action/edit', vm.record).then(function (response) {
                 vm.saved = true;
                 vm.update_ready = false;
               }).catch(function (value) {
@@ -63,7 +63,7 @@
                 'value': decision
               });
 
-              $http.post('/api/holdingpen/' + workflowId + '/action/resolve', data).then(function (response) {
+              $http.post('/api/src/' + workflowId + '/action/resolve', data).then(function (response) {
                 vm.ingestion_complete = true;
                 var record = vm.record;
                 if (!record) record = vm;
@@ -90,7 +90,7 @@
                   'id': _id
                 });
 
-                $http.post('/api/holdingpen/' + _id + '/action/resolve', _data).then(function (response) {
+                $http.post('/api/src/' + _id + '/action/resolve', _data).then(function (response) {
                   var _data = JSON.parse(response.config.data);
                   for (var record_idx in records) {
                     if (+_data.id === +records[record_idx]._id) {
@@ -108,17 +108,17 @@
             },
 
             deleteRecord: function (vm, workflowId, reload) {
-              $http.delete('/api/holdingpen/' + workflowId, vm.record).then(function (response) {
+              $http.delete('/api/src/' + workflowId, vm.record).then(function (response) {
                 vm.ingestion_complete = true;
                 if (reload)
-                  window.location = '/holdingpen/list/'
+                  window.location = '/src/list/'
               }).catch(function (value) {
                 vm.ingestion_complete = false;
               });
             },
 
             resumeWorkflow: function (vm, workflowId) {
-              $http.post('/api/holdingpen/' + workflowId + '/action/resume').then(function (response) {
+              $http.post('/api/src/' + workflowId + '/action/resume').then(function (response) {
                 vm.workflow_flag = 'Workflow resumed';
               }).catch(function (value) {
                 vm.resumed = false;
@@ -126,7 +126,7 @@
             },
 
             restartWorkflow: function (vm, workflowId) {
-              $http.post('/api/holdingpen/' + workflowId + '/action/restart').then(function (response) {
+              $http.post('/api/src/' + workflowId + '/action/restart').then(function (response) {
                 vm.workflow_flag = 'Workflow restarted';
               }).catch(function (value) {
                 vm.restarted = false;
