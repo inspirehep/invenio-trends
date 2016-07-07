@@ -31,10 +31,22 @@ from invenio_assets.filters import RequireJSFilter
 from inspirehep.modules.theme.bundles import js as _js
 
 js = NpmBundle(
-    "js/invenio_trends/src/app.js",
+    "js/app.js",
     output="gen/invenio_trends.%(version)s.js",
     filters=RequireJSFilter(exclude=[_js]),
+    depends="js/**/*.js",
     npm={
         "angular": "~1.5.7"
+    }
+)
+
+css = NpmBundle(
+    "css/app.css",
+    filters="cleancss",
+    output="gen/invenio_trends.%(version)s.css",
+    depends="css/**/*.css",
+    npm={
+        "bootstrap": "~3.3.6",
+        "font-awesome": "~4.6.3",
     }
 )

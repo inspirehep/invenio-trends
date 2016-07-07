@@ -47,6 +47,6 @@ def index():
     #return jsonify(s.execute().to_dict())
 
     return render_template(
-        "invenio_trends/page.html",
+        "invenio_trends/index.html",
         module_name=_('Invenio-Trends'))
 
