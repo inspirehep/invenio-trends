@@ -26,8 +26,9 @@
 
 from __future__ import absolute_import, print_function
 
-from flask import Blueprint, jsonify
+from flask import Blueprint, jsonify, render_template
 from invenio_search import RecordsSearch
+from flask_babelex import gettext as _
 
 blueprint = Blueprint(
     'invenio_trends',
@@ -43,9 +44,9 @@ def index():
     s = RecordsSearch(index="records-hep") \
         .query("match", title="physics") \
 
-    return jsonify(s.execute().to_dict())
+    #return jsonify(s.execute().to_dict())
 
-    #return render_template(
-    #    "invenio_trends/index.html",
-    #    module_name=_('Invenio-Trends'))
+    return render_template(
+        "invenio_trends/page.html",
+        module_name=_('Invenio-Trends'))
 

@@ -105,6 +105,7 @@ setup(
         # 'invenio_admin.actions': [],
         'invenio_assets.bundles': [
             'invenio_trends_js = invenio_trends.bundles:js',
+            'invenio_trends_css = invenio_trends.bundles:css',
         ],
         # 'invenio_base.api_apps': [],
         # 'invenio_base.api_blueprints': [],
