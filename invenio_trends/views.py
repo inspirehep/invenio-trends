@@ -26,7 +26,7 @@
 
 from __future__ import absolute_import, print_function
 
-from flask import Blueprint, jsonify, render_template
+from flask import Blueprint, jsonify, render_template, request, current_app
 from invenio_search import RecordsSearch
 from flask_babelex import gettext as _
 
@@ -37,6 +37,7 @@ blueprint = Blueprint(
     static_folder='static',
 )
 
+#@blueprint.route("/<int:recid>/") recid
 @blueprint.route("/")
 def index():
     """Basic view."""
@@ -44,9 +45,27 @@ def index():
     s = RecordsSearch(index="records-hep") \
         .query("match", title="physics") \
 
-    #return jsonify(s.execute().to_dict())
+    #recid = request.args.get('recid', '')
 
-    return render_template(
-        "invenio_trends/index.html",
-        module_name=_('Invenio-Trends'))
+    json = jsonify(s.execute().to_dict())
+
+    return json
+
+def unauthorized(e):
+    """Error handler to show a 401.html page in case of a 401 error."""
+    return render_template(current_app.config['THEME_401_TEMPLATE']), 401
+
+
+def insufficient_permissions(e):
+    """Error handler to show a 403.html page in case of a 403 error."""
+    return render_template(current_app.config['THEME_403_TEMPLATE']), 403
+
+
+def page_not_found(e):
+    """Error handler to show a 404.html page in case of a 404 error."""
+    return render_template(current_app.config['THEME_404_TEMPLATE']), 404
+
+def internal_error(e):
+    """Error handler to show a 500.html page in case of a 500 error."""
+    return render_template(current_app.config['THEME_500_TEMPLATE']), 500
 

@@ -67,7 +67,8 @@ setup_requires = [
 install_requires = [
     'Flask-BabelEx>=0.9.2',
     'invenio-search',
-    'invenio-indexer'
+    'invenio-indexer',
+    'invenio-base'
 ]
 
 packages = find_packages()
@@ -103,10 +104,7 @@ setup(
         # TODO: Edit these entry points to fit your needs.
         # 'invenio_access.actions': [],
         # 'invenio_admin.actions': [],
-        'invenio_assets.bundles': [
-            'invenio_trends_js = invenio_trends.bundles:js',
-            'invenio_trends_css = invenio_trends.bundles:css',
-        ],
+        #'invenio_assets.bundles': [],
         # 'invenio_base.api_apps': [],
         # 'invenio_base.api_blueprints': [],
         # 'invenio_base.blueprints': [],

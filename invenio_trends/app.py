@@ -37,7 +37,6 @@ Run example development server:
 from __future__ import absolute_import, print_function
 
 from flask import Flask
-from flask.ext.assets import Environment
 from flask_babelex import Babel
 
 from invenio_indexer import InvenioIndexer
@@ -46,7 +45,6 @@ from invenio_trends import InvenioTrends
 
 # Create Flask application
 app = Flask(__name__)
-assets = Environment(app)
 Babel(app)
 InvenioIndexer(app)
 InvenioSearch(app)
