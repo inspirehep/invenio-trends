@@ -26,9 +26,21 @@
 
 from __future__ import absolute_import, print_function
 
-from flask import Blueprint, jsonify, render_template, request, current_app
+from time import strptime
+
+from flask import Blueprint, jsonify, render_template, request, current_app, make_response, app
 from invenio_search import RecordsSearch
 from flask_babelex import gettext as _
+
+import logging
+
+logger = logging.getLogger('routes')
+logger.setLevel(logging.INFO)
+ch = logging.StreamHandler()
+ch.setLevel(logging.DEBUG)
+formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+ch.setFormatter(formatter)
+logger.addHandler(ch)
 
 blueprint = Blueprint(
     'invenio_trends',
@@ -42,30 +54,63 @@ blueprint = Blueprint(
 def index():
     """Basic view."""
 
-    s = RecordsSearch(index="records-hep") \
-        .query("match", title="physics") \
+    return "hello world"
 
-    #recid = request.args.get('recid', '')
+@blueprint.route("/search/<string:terms>/")
+def search(terms):
 
-    json = jsonify(s.execute().to_dict())
+    query = RecordsSearch(index="records-hep") \
+        .query("match", abstract=terms) \
+        .fields("earliest_date") \
+        .sort("earliest_date")[:10000] # TODO : better
 
-    return json
+    res = query.execute()
 
-def unauthorized(e):
+    if not res.success():
+        return internal_error("query error")
+
+
+    logger.info("search completed in %dms" % res.took)
+    logger.info("search returned %d elements" % res.hits.total)
+    max_scores = res.hits.max_score
+
+    buckets = []
+
+    for elem in res:
+        id = elem.meta.id
+        dates = elem.earliest_date
+
+        try:
+            date = dates[0]
+            strptime(date, "%Y-%m-%d")
+            buckets.append({"id": id, "date": date})
+        except:
+            pass
+
+    ret = [
+        {
+          "key": terms,
+          "values": buckets
+        }
+    ]
+
+    return jsonify(ret)
+
+def unauthorized(e=""):
     """Error handler to show a 401.html page in case of a 401 error."""
-    return render_template(current_app.config['THEME_401_TEMPLATE']), 401
+    return make_response(jsonify(error="unauthorized"), 401)
 
-
-def insufficient_permissions(e):
+def insufficient_permissions(e=""):
     """Error handler to show a 403.html page in case of a 403 error."""
-    return render_template(current_app.config['THEME_403_TEMPLATE']), 403
+    return make_response(jsonify(error="insufficient_permissions"), 403)
 
-
-def page_not_found(e):
+def page_not_found(e=""):
     """Error handler to show a 404.html page in case of a 404 error."""
-    return render_template(current_app.config['THEME_404_TEMPLATE']), 404
+    return make_response(jsonify(error="not found"), 404)
 
-def internal_error(e):
+def internal_error(e=""):
     """Error handler to show a 500.html page in case of a 500 error."""
-    return render_template(current_app.config['THEME_500_TEMPLATE']), 500
+    mes = "internal error: " + e
+    logger.error(mes)
+    return make_response(jsonify(error=mes), 500)
 
