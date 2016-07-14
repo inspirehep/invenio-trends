@@ -81,9 +81,7 @@ def search(terms):
         dates = elem.earliest_date
 
         try:
-            date = dates[0]
-            strptime(date, "%Y-%m-%d")
-            buckets.append({"id": id, "date": date})
+            buckets.append({"id": id, "date": dates[0]})
         except:
             pass
 
@@ -95,6 +93,38 @@ def search(terms):
     ]
 
     return jsonify(ret)
+
+@blueprint.route("/hist/<string:terms>/")
+def hist(terms):
+
+                #.query("match", abstract=terms) \
+    s = RecordsSearch(index="records-hep")[0:0]
+
+    s.aggs.bucket('weekly', 'date_histogram', field='earliest_date', interval='week', format='epoch_second')
+
+    res = s.execute()
+
+    if not res.success():
+        return internal_error("query_error")
+
+    logger.info("search completed in %dms" % res.took)
+    logger.info("search returned %d elements" % res.hits.total)
+
+    buckets = []
+
+    for elem in res.aggregations.weekly.buckets:
+        buckets.append({"x": elem.key_as_string, "y": elem.doc_count})
+
+    ret = [
+        {
+            "key": terms,
+            "values": buckets
+        }
+    ]
+
+    return jsonify(ret)
+
+
 
 def unauthorized(e=""):
     """Error handler to show a 401.html page in case of a 401 error."""
