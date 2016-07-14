@@ -47,3 +47,8 @@ Invenio module that adds a trends api to the platform.
 
 * Free software: GPLv2 license
 * Documentation: https://pythonhosted.org/invenio-trends/
+
+
+.. image:: https://badges.gitter.im/inspirehep/invenio-trends.svg
+   :alt: Join the chat at https://gitter.im/inspirehep/invenio-trends
+   :target: https://gitter.im/inspirehep/invenio-trends?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
