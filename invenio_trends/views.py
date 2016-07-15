@@ -97,10 +97,9 @@ def search(terms):
 @blueprint.route("/hist/<string:terms>/")
 def hist(terms):
 
-                #.query("match", abstract=terms) \
-    s = RecordsSearch(index="records-hep")[0:0]
+    s = RecordsSearch(index="records-hep")[0:0].query("match", abstract=terms)
 
-    s.aggs.bucket('weekly', 'date_histogram', field='earliest_date', interval='week', format='epoch_second')
+    s.aggs.bucket('weekly', 'date_histogram', field='earliest_date', interval='week', format='date_optional_time')
 
     res = s.execute()
 

@@ -29,12 +29,10 @@ Run example development server:
 
 .. code-block:: console
 
-   $ export FLASK_APP=invenio_trends/src.py
+   $ export FLASK_APP=invenio_trends/app.py
    $ export DEBUG=1
    $ flask run
 """
-
-from __future__ import absolute_import, print_function
 
 from flask import Flask
 from flask.ext.cors import CORS
