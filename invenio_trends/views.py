@@ -50,13 +50,13 @@ blueprint = Blueprint(
 )
 
 #@blueprint.route("/<int:recid>/") recid
-@blueprint.route("/")
+@blueprint.route("/trends")
 def index():
     """Basic view."""
 
     return "hello world"
 
-@blueprint.route("/search/<string:terms>/")
+@blueprint.route("/trends/search/<string:terms>/")
 def search(terms):
 
     query = RecordsSearch(index="records-hep") \
@@ -94,7 +94,7 @@ def search(terms):
 
     return jsonify(ret)
 
-@blueprint.route("/hist/<string:terms>/")
+@blueprint.route("/trends/hist/<string:terms>/")
 def hist(terms):
 
     s = RecordsSearch(index="records-hep")[0:0].query("match", abstract=terms)
