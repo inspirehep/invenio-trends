@@ -123,8 +123,6 @@ def hist(terms):
 
     return jsonify(ret)
 
-
-
 def unauthorized(e=""):
     """Error handler to show a 401.html page in case of a 401 error."""
     return make_response(jsonify(error="unauthorized"), 401)
