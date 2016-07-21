@@ -1,0 +1,55 @@
+
+POST records-hep/_search
+{
+    "query": {
+        "match_all" : {}
+    },
+    "filter": {
+        "range": {
+            "earliest_date": {
+                "gte": "1975-01-01"
+            }
+        }
+    },
+    "_source": [
+        "titles.title",
+        "references.recid",
+        "abstracts.value",
+        "earliest_date",
+        "creation_modification_date",
+        "date_and_time_of_latest_transaction",
+        "preprint_date"
+    ]
+}
+
+// need two calls so that the mapping update itself
+POST /_reindex
+{
+  "source": {
+    "index": "records-hep",
+    "type": "hep",
+    "query": {
+        "match_all" : {}
+    },
+    "filter": {
+        "range": {
+            "earliest_date": {
+                "gte": "1075-01-01"
+            }
+        }
+    },
+    "_source": [
+        "titles.title",
+        "references.recid",
+        "abstracts.value",
+        "earliest_date",
+        "creation_modification_date",
+        "date_and_time_of_latest_transaction",
+        "preprint_date"
+    ]
+  },
+  "dest": {
+    "index": "hep-slim",
+    "type": "hep"
+  }
+}
