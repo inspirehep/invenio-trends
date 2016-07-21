@@ -17,7 +17,6 @@ POST records-hep/_search
         "abstracts.value",
         "earliest_date",
         "creation_modification_date",
-        "date_and_time_of_latest_transaction",
         "preprint_date"
     ]
 }
@@ -44,7 +43,6 @@ POST /_reindex
         "abstracts.value",
         "earliest_date",
         "creation_modification_date",
-        "date_and_time_of_latest_transaction",
         "preprint_date"
     ]
   },
