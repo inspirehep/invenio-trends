@@ -12,6 +12,7 @@ POST records-hep/_search
         }
     },
     "_source": [
+        "self_recid",
         "titles.title",
         "references.recid",
         "abstracts.value",
@@ -21,23 +22,25 @@ POST records-hep/_search
     ]
 }
 
-// need two calls so that the mapping update itself
 POST /_reindex
 {
   "source": {
     "index": "records-hep",
     "type": "hep",
     "query": {
-        "match_all" : {}
+        "not_match": {
+           "titles.title": "withdrawn or canceled"
+        }
     },
     "filter": {
         "range": {
             "earliest_date": {
-                "gte": "1075-01-01"
+                "gte": "1975-01-01"
             }
         }
     },
     "_source": [
+        "self_recid",
         "titles.title",
         "references.recid",
         "abstracts.value",
@@ -50,4 +53,76 @@ POST /_reindex
     "index": "hep-slim",
     "type": "hep"
   }
+}
+
+GET hep-slim/_mapping/
+{
+   "hep-slim": {
+      "mappings": {
+         "hep": {
+            "properties": {
+               "abstracts": {
+                  "properties": {
+                     "value": {
+                        "type": "string"
+                     }
+                  }
+               },
+               "creation_modification_date": {
+                  "properties": {
+                     "creation_date": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_millis"
+                     },
+                     "modification_date": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_millis"
+                     }
+                  }
+               },
+               "earliest_date": {
+                  "type": "date",
+                  "format": "strict_date_optional_time||epoch_millis"
+               },
+               "preprint_date": {
+                  "type": "date",
+                  "format": "strict_date_optional_time||epoch_millis"
+               },
+               "references": {
+                  "properties": {
+                     "recid": {
+                        "type": "long"
+                     }
+                  }
+               },
+               "self_recid": {
+                  "type": "long"
+               },
+               "titles": {
+                  "properties": {
+                     "title": {
+                        "type": "string"
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}
+
+POST hep-slim/_search
+{
+    "fields": [
+        "earliest_date"
+    ],
+    "query": {
+        "bool": {
+            "filter" : {
+                "script": {
+                    "script": "d = doc['earliest_date'].date; d.getDayOfMonth() == 1"
+                }
+            }
+        }
+    }
 }
