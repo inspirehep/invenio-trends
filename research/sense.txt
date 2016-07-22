@@ -126,3 +126,47 @@ POST hep-slim/_search
         }
     }
 }
+
+POST hep-slim/_search
+{
+   "query": {
+        "bool": {
+            "filter" : {
+                "script": {
+                    "script": "d = doc['earliest_date'].date; d.getDayOfMonth() != 1"
+                }
+            }
+        }
+    },
+    "size": 0,
+    "aggregations" : {
+        "references" : {
+            "terms": {
+                "field": "references.recid",
+                "size": 0
+            },
+            "aggregations": {
+                "min_earliest_date": {
+                    "min" : {
+                        "field" : "earliest_date"
+                    }
+                },
+                "min_preprint_date": {
+                    "min" : {
+                        "field" : "preprint_date"
+                    }
+                },
+                "min_modification_date": {
+                    "min" : {
+                        "field" : "creation_modification_date.modification_date"
+                    }
+                },
+                "min_creation_date": {
+                    "min" : {
+                        "field" : "creation_modification_date.creation_date"
+                    }
+                }
+            }
+        }
+    }
+}
