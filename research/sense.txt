@@ -28,14 +28,18 @@ POST /_reindex
     "index": "records-hep",
     "type": "hep",
     "query": {
-        "not_match": {
-           "titles.title": "withdrawn or canceled"
-        }
-    },
-    "filter": {
-        "range": {
-            "earliest_date": {
-                "gte": "1975-01-01"
+        "bool": {
+            "must_not": {
+                "match": {
+                    "titles.title": "withdrawn or canceled"
+                }
+            },
+            "filter": {
+                "range": {
+                    "earliest_date": {
+                        "gte": "1975-01-01"
+                    }
+                }
             }
         }
     },
@@ -169,4 +173,39 @@ POST hep-slim/_search
             }
         }
     }
+}
+
+POST /_reindex
+{
+  "source": {
+    "index": "records-hep",
+    "type": "hep",
+    "query": {
+        "bool": {
+            "must_not": {
+                "match": {
+                    "titles.title": "withdrawn or canceled"
+                }
+            },
+            "filter": {
+                "range": {
+                    "earliest_date": {
+                        "gte": "2013-02-01",
+                        "lte": "2016-06-01"
+                    }
+                }
+            }
+        }
+    },
+    "_source": [
+        "self_recid",
+        "titles.title",
+        "abstracts.value",
+        "earliest_date"
+    ]
+  },
+  "dest": {
+    "index": "hep-recent",
+    "type": "hep"
+  }
 }
