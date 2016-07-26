@@ -209,3 +209,96 @@ POST /_reindex
     "type": "hep"
   }
 }
+
+PUT /hep-analysis
+{
+   "settings": {
+      "analysis": {
+         "analyzer": {
+            "custom_analyzer": {
+               "type": "custom",
+               "tokenizer": "icu_tokenizer",
+               "filter": [
+                    "custom_word_delimiter",
+                    "lowercase",
+                    "custom_pattern",
+                    "custom_stop",
+                    "custom_stemmer",
+                    "custom_bigram",
+                    "custom_length",
+                    "trim"
+                ]
+            }
+         },
+         "filter": {
+            "custom_word_delimiter": {
+                "type": "word_delimiter",
+                "generate_word_parts": false,
+                "generate_number_parts": true,
+                "catenate_words": true,
+                "catenate_numbers": true,
+                "catenate_all": false,
+                "preserve_original": false,
+                "split_on_case_change": false,
+                "split_on_numerics": false,
+                "stem_english_possessive": true
+            },
+            "custom_pattern": {
+                "type": "pattern_replace",
+                "pattern": "([0-9]+)",
+                "replacement": ""
+            },
+            "custom_stop": {
+                "type": "stop",
+                "stopwords": ["a","about","above","after","again","against","all","am","an","and","any","are","aren't","as","at","be","because","been","before","being","below","between","both","but","by","can't","cannot","could","couldn't","did","didn't","do","does","doesn't","doing","don't","down","during","each","few","for","from","further","had","hadn't","has","hasn't","have","haven't","having","he","he'd","he'll","he's","her","here","here's","hers","herself","him","himself","his","how","how's","i","i'd","i'll","i'm","i've","if","in","into","is","isn't","it","it's","its","itself","let's","me","more","most","mustn't","my","myself","no","nor","not","of","off","on","once","only","or","other","ought","our","ours","ourselves","out","over","own","same","shan't","she","she'd","she'll","she's","should","shouldn't","so","some","such","than","that","that's","the","their","theirs","them","themselves","then","there","there's","these","they","they'd","they'll","they're","they've","this","those","through","to","too","under","until","up","very","was","wasn't","we","we'd","we'll","we're","we've","were","weren't","what","what's","when","when's","where","where's","which","while","who","who's","whom","why","why's","with","won't","would","wouldn't","you","you'd","you'll","you're","you've","your","yours","yourself","yourselves"],
+                "ignore_case": true,
+                "remove_trailing": false
+            },
+            "custom_stemmer" : {
+                "type": "stemmer",
+                "name": "english"
+            },
+            "custom_bigram" : {
+                "type" : "shingle",
+                "min_shingle_size": 2,
+                "max_shingle_size": 3,
+                "output_unigrams": true,
+                "filler_token": ""
+            },
+            "custom_length": {
+                "type": "length",
+                "min": 2
+            }
+        }
+      }
+   },
+   "mappings": {
+        "hep": {
+            "properties": {
+                "abstracts": {
+                    "properties": {
+                        "value": {
+                            "type": "string",
+                            "term_vector": "yes",
+                            "analyzer": "custom_analyzer"
+                        }
+                    }
+                },
+                "earliest_date": {
+                    "type": "date",
+                    "format": "strict_date_optional_time||epoch_millis"
+                },
+                "self_recid": {
+                    "type": "long"
+                },
+                "titles": {
+                    "properties": {
+                        "title": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+   }
+}
