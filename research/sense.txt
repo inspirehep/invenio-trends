@@ -314,3 +314,15 @@ PUT /hep-analysis
         }
    }
 }
+
+POST /_reindex
+{
+  "source": {
+    "index": "hep-recent",
+    "type": "hep"
+  },
+  "dest": {
+    "index": "hep-analysis",
+    "type": "hep"
+  }
+}
