@@ -220,7 +220,6 @@ PUT /hep-analysis
                "tokenizer": "icu_tokenizer",
                "filter": [
                     "lowercase",
-                    "custom_latex_removal",
                     "custom_word_delimiter",
                     "custom_number_removal",
                     "custom_stop",
@@ -229,6 +228,9 @@ PUT /hep-analysis
                     "custom_bigram",
                     "custom_spacing_removal",
                     "trim"
+                ],
+                "char_filter": [
+                    "html_strip"
                 ]
             }
          },
@@ -248,11 +250,6 @@ PUT /hep-analysis
             "custom_number_removal": {
                 "type": "pattern_replace",
                 "pattern": "([0-9]+)",
-                "replacement": ""
-            },
-            "custom_latex_removal": {
-                "type": "pattern_replace",
-                "pattern": "(mm[sl]:?[a-z]+)",
                 "replacement": ""
             },
             "custom_spacing_removal": {
