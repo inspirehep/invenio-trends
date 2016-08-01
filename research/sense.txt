@@ -314,12 +314,42 @@ PUT /hep-analysis
 
 POST /_reindex
 {
-  "source": {
-    "index": "hep-recent",
-    "type": "hep"
-  },
-  "dest": {
-    "index": "hep-analysis",
-    "type": "hep"
-  }
+    "source": {
+        "index": "records-hep",
+        "type": "hep",
+        "query": {
+            "bool": {
+                "must_not": {
+                    "match": {
+                        "titles.title": "withdrawn or canceled"
+                    }
+                },
+                "filter": [
+                    {
+                        "range": {
+                            "earliest_date": {
+                                "gte": "2013-02-01",
+                                "lte": "2016-06-01"
+                            }
+                        }
+                    },
+                    {
+                        "script": {
+                            "script": "d = doc['earliest_date'].date; d.getDayOfYear() != 1"
+                        }
+                    }
+                ]
+            }
+        },
+        "_source": [
+            "self_recid",
+            "titles.title",
+            "abstracts.value",
+            "earliest_date"
+        ]
+    },
+    "dest": {
+        "index": "hep-analysis",
+        "type": "hep"
+    }
 }
