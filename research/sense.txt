@@ -337,6 +337,11 @@ POST /_reindex
                         "script": {
                             "script": "d = doc['earliest_date'].date; d.getDayOfYear() != 1"
                         }
+                    },
+                    {
+                        "exists": {
+                            "field": "abstracts.value"
+                        }
                     }
                 ]
             }
