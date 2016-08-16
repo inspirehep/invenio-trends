@@ -1,7 +1,6 @@
 TRENDS_ENDPOINT = "api/trends"
 
 TRENDS_SOURCE = {
-    "indexes": {
-        "records-hep"
-    }
+    'index': 'records-hep',
+    'doc': 'hep'
 }

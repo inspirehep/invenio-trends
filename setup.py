@@ -60,20 +60,19 @@ for reqs in extras_require.values():
     extras_require['all'].extend(reqs)
 
 setup_requires = [
-    'Babel>=1.3',
     'pytest-runner>=2.6.2',
 ]
 
 install_requires = [
-    'Flask-BabelEx>=0.9.2',
     'flask-cors',
-    'invenio-search',
-    'invenio-indexer',
-    'invenio-base'
+    'elasticsearch',
+    'numpy',
+    'enum34',
+    'redis',
+    'celery'
 ]
 
 packages = find_packages()
-
 
 # Get the version string. Cannot be done with import!
 g = {}
@@ -86,7 +85,7 @@ setup(
     version=version,
     description=__doc__,
     long_description=readme + '\n\n' + history,
-    keywords='invenio TODO',
+    keywords='invenio, trends',
     license='GPLv2',
     author='CERN',
     author_email='teo.stocco@cern.ch',
