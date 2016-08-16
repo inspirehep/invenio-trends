@@ -51,10 +51,7 @@ extras_require = {
         'Flask-DebugToolbar>=0.9',
         'ipython',
         'honcho',
-        'gunicorn',
-        'scipy',
-        'pylab',
-        'wordcloud'
+        'gunicorn'
     ],
 }
 
@@ -72,8 +69,7 @@ install_requires = [
     'numpy',
     'enum34',
     'redis',
-    'celery',
-    'scikit-learn'
+    'celery'
 ]
 
 packages = find_packages()
@@ -89,23 +85,23 @@ setup(
     version=version,
     description=__doc__,
     long_description=readme + '\n\n' + history,
-    keywords='invenio, trends, analysis, elasticsearch, ngrams',
+    keywords='invenio, trends',
     license='GPLv2',
     author='CERN',
     author_email='teo.stocco@cern.ch',
-    url='https://github.com/inspirehep/invenio-trends',
+    url='https://github.com/inspirehep/trends',
     packages=packages,
     zip_safe=False,
     include_package_data=True,
     platforms='any',
     entry_points={
+        'invenio_base.apps': [
+            'invenio_trends = invenio_trends:InvenioTrends',
+        ],
+        'invenio_i18n.translations': [
+            'messages = invenio_trends',
+        ],
         # TODO: Edit these entry points to fit your needs.
-        #'invenio_base.apps': [
-        #    'invenio_trends = invenio_trends:InvenioTrends',
-        #],
-        #'invenio_i18n.translations': [
-        #    'messages = invenio_trends',
-        #],
         # 'invenio_access.actions': [],
         # 'invenio_admin.actions': [],
         #'invenio_assets.bundles': [],
