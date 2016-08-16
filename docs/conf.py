@@ -138,7 +138,7 @@ html_theme_options = {
     'github_banner': True,
     'show_powered_by': False,
     'extra_nav_links': {
-        'invenio-trends@GitHub': 'http://github.com/inspirehep/trends',
+        'invenio-trends@GitHub': 'http://github.com/inspirehep/invenio-trends',
         'invenio-trends@PyPI': 'http://pypi.python.org/pypi/invenio-trends/',
     }
 }
