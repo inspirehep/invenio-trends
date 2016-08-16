@@ -24,22 +24,13 @@
 
 """Invenio module that adds a trends api to the platform."""
 
-from __future__ import absolute_import, print_function
-
-from flask_babelex import gettext as _
-
 from .views import blueprint
-
 
 class InvenioTrends(object):
     """Invenio-Trends extension."""
 
     def __init__(self, app=None):
         """Extension initialization."""
-        # TODO: This is an example of translation string with comment. Please
-        # remove it.
-        # NOTE: This is a note to a translator.
-        _('A translation string')
         if app:
             self.init_app(app)
 
@@ -51,7 +42,4 @@ class InvenioTrends(object):
 
     def init_config(self, app):
         """Initialize configuration."""
-        app.config.setdefault(
-            "TRENDS_BASE_TEMPLATE",
-            app.config.get("BASE_TEMPLATE",
-                           "invenio_trends/base.html"))
+

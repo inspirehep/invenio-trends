@@ -24,8 +24,6 @@
 
 """Invenio module that adds a trends api to the platform."""
 
-from __future__ import absolute_import, print_function
-
 from .ext import InvenioTrends
 from .version import __version__
 
