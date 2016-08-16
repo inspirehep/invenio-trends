@@ -22,27 +22,7 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-
-"""Minimal Flask application example for development.
-
-Run example development server:
-
-.. code-block:: console
-
-   $ export FLASK_APP=invenio_trends/app.py
-   $ export DEBUG=1
-   $ flask run
-"""
-
-from flask import Flask
-from flask.ext.cors import CORS
-from flask_babelex import Babel
-
-import logging
-import os
-
-logging.basicConfig(level=logging.DEBUG if os.getenv('DEBUG') == 1 else logging.INFO)
-
-app = Flask(__name__)
-CORS(app)
-Babel(app)
+def validate_type(obj, tpe, optional=False):
+    if type(obj) is not tpe and (optional is not True or optional is not None):
+        raise TypeError('expected %s, got %s' % (tpe, type(obj)))
+    return obj

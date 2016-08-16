@@ -22,27 +22,13 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-
-"""Minimal Flask application example for development.
-
-Run example development server:
-
-.. code-block:: console
-
-   $ export FLASK_APP=invenio_trends/app.py
-   $ export DEBUG=1
-   $ flask run
-"""
-
-from flask import Flask
-from flask.ext.cors import CORS
-from flask_babelex import Babel
-
+from celery import shared_task
+from .config import TRENDS_SOURCE
 import logging
-import os
+from .index_synchronizer import IndexSynchronizer
 
-logging.basicConfig(level=logging.DEBUG if os.getenv('DEBUG') == 1 else logging.INFO)
+logger = logging.getLogger(__name__)
 
-app = Flask(__name__)
-CORS(app)
-Babel(app)
+@shared_task(ignore_result=True)
+def synchronize_index():
+    index_sync = IndexSynchronizer()
