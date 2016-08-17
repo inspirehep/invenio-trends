@@ -31,5 +31,12 @@ TRENDS_SOURCE = {
     'analysis_field': 'abstracts.value',
     'date_field': 'earliest_date',
     'minimum_date': '2013-02-01',
-    'maximum_date': None
+    'maximum_date': None,
+}
+
+TRENDS_PARAMS = {
+    'unigram': True,
+    'minimum_ngram': 2,
+    'maximum_ngram': 3,
+    'stopwords_file': 'stopwords.txt'
 }
