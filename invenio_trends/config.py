@@ -24,19 +24,24 @@
 
 TRENDS_ENDPOINT = "api/trends"
 
-TRENDS_SOURCE = {
+TRENDS_PARAMS = {
+    'host': 'http://localhost:9200',
     'index': 'records-hep',
-    'origin_doc_type': 'hep',
-    'analysis_doc_type': 'trends-analysis',
-    'analysis_field': 'abstracts.value',
-    'date_field': 'earliest_date',
+    'source': {
+        'analysis_field': 'abstracts.value',
+        'date_field': 'earliest_date',
+        'doc_type': 'hep',
+    },
+    'analysis': {
+        'analysis_field': 'analysis',
+        'date_field': 'date',
+        'doc_type': 'trends',
+    },
     'minimum_date': '2013-02-01',
     'maximum_date': None,
-}
-
-TRENDS_PARAMS = {
+    'filter_script': "d = doc['earliest_date'].date; d.getDayOfYear() != 1",
     'unigram': True,
     'minimum_ngram': 2,
     'maximum_ngram': 3,
-    'stopwords_file': 'stopwords.txt'
+    'stopwords_file': 'stopwords.txt',
 }

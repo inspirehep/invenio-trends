@@ -22,43 +22,151 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-from .utils import validate_type
-from datetime import datetime
-from elasticsearch_dsl import Search
-from .config import TRENDS_PARAMS
-from Requests import put
+import Requests as r
+import logging
+
+logger = logging.getLogger(__name__)
 
 class IndexSynchronizer:
-    """Synchronize given elasticsearch fields into another document with customized analyser."""
+    """Synchronization helper for maintaining another index type with customized analyser."""
 
-    def __init__(self, index, origin_doc_type, analysis_doc_type, analysis_field, date_field, minimum_date=None, maximum_date=None):
+    def __init__(self, config):
+        self.host = config['host']
+        self.index = config['index']
 
-        self.index = validate_type(index, str)
-        self.origin_doc_type = validate_type(origin_doc_type, str)
-        self.analysis_doc_type = validate_type(analysis_doc_type, str)
-        self.analysis_fields = validate_type(analysis_field, str)
-        self.date_field = validate_type(date_field, str)
-        self.minimum_date = validate_type(minimum_date, datetime, optional=True)
-        self.maximum_date = validate_type(maximum_date, datetime, optional=True)
+        self.src_analysis_fld = config['source']['analysis_field']
+        self.src_date_fld = config['source']['date_field']
+        self.src_doc_type = config['source']['doc_type']
 
-        q = Search(index=index, doc_type=origin_doc_type) \
-            .filter('exist', fields=analysis_field) \
-            .filter('exist', field=date_field) \
-            .filter('range', **{date_field: {'gt': minimum_date, 'lte': maximum_date}})
+        self.min_date = config['minimum_date']
+        self.max_date = config['maximum_date']
+        self.selector_script = config['filter_script']
 
-        if q.count() <= 0:
-            raise RuntimeError('cannot find any entry in elasticsearch')
+        self.ana_analysis_fld = config['analysis']['analysis_field']
+        self.ana_date_fld = config['analysis']['date_field']
+        self.ana_doc_type = config['analysis']['doc_type']
+
+        self.unigram = config['unigram']
+        self.min_ngram = config['minimum_ngram']
+        self.max_ngram = config['maximum_ngram']
+        self.stopwords_file = config['stopwords_file']
+
+    def synchronize(self):
+        """Reindex entries to new analysed type."""
+        logger.info('reindex %s started', self.index)
+        reindex = self.synchronize_config()
+        res = r.post(self.host+'/_reindex', data=reindex).json()
+
+        if res.get('ok') is not True:
+            raise RuntimeError('cannot reindex: %s' % res)
+        logger.info('reindex %s terminated', self.index)
+
+    def setup_mappings(self):
+        """Creates mappings for analyzed field and date field."""
+        mappings = {
+            "properties": {
+                self.ana_date_fld: {
+                    "type": "date",
+                    "format": "strict_date_optional_time||epoch_millis"
+                },
+                self.src_analysis_fld: {
+                    "type": "string",
+                    "term_vector": "yes",
+                    "analyzer": "trends_analyser"
+                }
+            }
+        }
+
+        res = r.put(self.host+'/'+self.index+'/_mapping/'+self.src_doc_type, data=mappings).json()
+        if res.get('ok') is not True:
+            raise RuntimeError('cannot create mappings: %s' % res)
+
+    def setup_analyzer(self):
+        """Creates customized analyser into the new type resulting into a short downtime for the whole index."""
+        self.close_index()
+
+        analyser = self.analyzer_config()
+        res = r.put(self.host+'/'+self.index+'/_settings', data=analyser).json()
+
+        if res.get('ok') is not True:
+            raise RuntimeError('cannot add analyzer: %s' % res)
+        logger.info('setup analyzer')
+
+        self.open_index()
+
+    def open_index(self):
+        """Opens an index or raise an exception."""
+        res = r.post(self.host+'/'+self.index+'/_open').json()
+        if res.get('ok') is not True:
+            raise RuntimeError('cannot open index: %s' % res)
+        logger.info('open index %s', self.index)
+
+    def close_index(self):
+        """Closes an index or raise an exception."""
+        res = r.post(self.host+'/'+self.index+'/_close').json()
+        if res.get('ok') is not True:
+            raise RuntimeError('cannot close index: %s' % res)
+        logger.info('close index %s', self.index)
 
     def parse_stopwords(self, filename):
+        """Parses stopwords in given file eliminating comment and empty lines."""
         with open(filename) as f:
             return [l for l in f.readlines() if not l.startswith('#') and not len(l)]
 
-    def create_analyser(self):
+    def synchronize_config(self):
+        """Returns query data for reindexing an index to itself (changing type)."""
+        selector_script = {}
+        if self.selector_script is not None:
+            selector_script['script'] = {
+                'script': self.selector_script
+            }
+        return {
+            "source": {
+                "index": self.index,
+                "type": self.src_doc_type,
+                "query": {
+                    "bool": {
+                        "filter": [
+                            {
+                                "exists": [
+                                    {
+                                        "field": self.src_analysis_fld
+                                    },
+                                    {
+                                        "field": self.src_date_fld
+                                    }
+                                ]
+                            },
+                            {
+                                "range": {
+                                    self.src_date_fld: {
+                                        "gt": self.min_date,
+                                        "lte": self.max_date
+                                    }
+                                }
+                            },
+                            selector_script
+                        ]
+                    }
+                },
+                "_source": [
+                    self.src_analysis_fld,
+                    self.src_date_fld
+                ]
+            },
+            "dest": {
+                "index": self.index,
+                "type": self.ana_doc_type
+            },
+            "script": {
+                "inline": 'ctx._source.'+self.ana_analysis_fld+' = ctx._source.remove("'+self.src_analysis_fld+'");'
+                          'ctx._source.'+self.ana_date_fld+' = ctx._source.remove("'+self.src_date_fld+'");'
+            }
+        }
 
-
-        self.index/_settings
-
-        analyser = {
+    def analyzer_config(self):
+        """Returns query data for adding an analyzer."""
+        return {
             "analysis": {
                 "analyzer": {
                     "trends_analyser": {
@@ -112,7 +220,7 @@ class IndexSynchronizer:
                     },
                     "ctrends_stopwords": {
                         "type": "stop",
-                        "stopwords": self.parse_stopwords(TRENDS_PARAMS['stopwords_file']),
+                        "stopwords": self.parse_stopwords(self.stopwords_file),
                         "ignore_case": True,
                         "remove_trailing": True
                     },
@@ -122,9 +230,9 @@ class IndexSynchronizer:
                     },
                     "trends_bigram" : {
                         "type" : "shingle",
-                        "min_shingle_size": TRENDS_PARAMS['minimum_ngram'],
-                        "max_shingle_size": TRENDS_PARAMS['maximum_ngram'],
-                        "output_unigrams": TRENDS_PARAMS['unigram'],
+                        "min_shingle_size": self.min_ngram,
+                        "max_shingle_size": self.max_ngram,
+                        "output_unigrams": self.unigram,
                         "filler_token": ""
                     },
                     "trends_length": {
@@ -134,9 +242,4 @@ class IndexSynchronizer:
                 }
             }
         }
-
-
-
-
-
 
