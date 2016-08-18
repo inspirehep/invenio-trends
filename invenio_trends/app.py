@@ -34,12 +34,12 @@ Run example development server:
    $ flask run
 """
 
+import logging
+import os
+
 from flask import Flask
 from flask.ext.cors import CORS
 from flask_babelex import Babel
-
-import logging
-import os
 
 logging.basicConfig(level=logging.DEBUG if os.getenv('DEBUG') == 1 else logging.INFO)
 

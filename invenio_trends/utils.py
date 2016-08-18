@@ -22,7 +22,10 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
+"""General utility functions."""
+
 def validate_type(obj, tpe, optional=False):
+    """Return given object if matching given type or throw an exception."""
     if type(obj) is not tpe and (optional is not True or optional is not None):
         raise TypeError('expected %s, got %s' % (tpe, type(obj)))
     return obj

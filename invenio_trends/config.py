@@ -22,6 +22,8 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
+"""Configuration options."""
+
 TRENDS_ENDPOINT = "api/trends"
 
 TRENDS_PARAMS = {

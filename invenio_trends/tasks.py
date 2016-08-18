@@ -22,13 +22,22 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-from celery import shared_task
-from .config import TRENDS_SOURCE
+"""Tasks to be periodically scheduled."""
+
 import logging
+
+from celery import shared_task
+
+from .config import TRENDS_PARAMS
 from .index_synchronizer import IndexSynchronizer
 
 logger = logging.getLogger(__name__)
 
 @shared_task(ignore_result=True)
-def synchronize_index():
-    index_sync = IndexSynchronizer()
+def index_synchronizer():
+    """Synchronize index task."""
+    logging.info('running index_synchronizer task')
+    index = IndexSynchronizer(TRENDS_PARAMS)
+    index.setup_analyzer()
+    index.setup_mappings()
+    index.synchronize()

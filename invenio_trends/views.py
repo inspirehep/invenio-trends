@@ -26,13 +26,10 @@
 
 from __future__ import absolute_import, print_function
 
-from time import strptime
-
-from flask import Blueprint, jsonify, render_template, request, current_app, make_response, app
-from invenio_search import RecordsSearch
-from flask_babelex import gettext as _
-
 import logging
+
+from flask import Blueprint, jsonify, make_response
+from invenio_search import RecordsSearch
 
 logger = logging.getLogger('routes')
 logger.setLevel(logging.INFO)
@@ -53,16 +50,15 @@ blueprint = Blueprint(
 @blueprint.route("/trends")
 def index():
     """Basic view."""
-
     return "hello world"
 
 @blueprint.route("/trends/search/<string:terms>/")
 def search(terms):
-
+    """."""
     query = RecordsSearch(index="records-hep") \
-        .query("match", abstract=terms) \
-        .fields("earliest_date") \
-        .sort("earliest_date")[:10000] # TODO : better
+                .query("match", abstract=terms) \
+                .fields("earliest_date") \
+                .sort("earliest_date")[:10000] # TODO : better
 
     res = query.execute()
 
@@ -87,8 +83,8 @@ def search(terms):
 
     ret = [
         {
-          "key": terms,
-          "values": buckets
+            "key": terms,
+            "values": buckets
         }
     ]
 
@@ -96,7 +92,7 @@ def search(terms):
 
 @blueprint.route("/trends/hist/<string:terms>/")
 def hist(terms):
-
+    """."""
     s = RecordsSearch(index="records-hep")[0:0].query("match", abstract=terms)
 
     s.aggs.bucket('weekly', 'date_histogram', field='earliest_date', interval='week', format='date_optional_time')

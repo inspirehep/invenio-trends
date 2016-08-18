@@ -22,8 +22,11 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-import Requests as r
+"""Index synchronizer."""
+
 import logging
+
+import Requests as r
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +34,7 @@ class IndexSynchronizer:
     """Synchronization helper for maintaining another index type with customized analyser."""
 
     def __init__(self, config):
+        """Unwrapping configuration defined in config.py."""
         self.host = config['host']
         self.index = config['index']
 
@@ -62,7 +66,7 @@ class IndexSynchronizer:
         logger.info('reindex %s terminated', self.index)
 
     def setup_mappings(self):
-        """Creates mappings for analyzed field and date field."""
+        """Create mappings for analyzed field and date field."""
         mappings = {
             "properties": {
                 self.ana_date_fld: {
@@ -82,7 +86,7 @@ class IndexSynchronizer:
             raise RuntimeError('cannot create mappings: %s' % res)
 
     def setup_analyzer(self):
-        """Creates customized analyser into the new type resulting into a short downtime for the whole index."""
+        """Create customized analyser into the new type resulting into a short downtime for the whole index."""
         self.close_index()
 
         analyser = self.analyzer_config()
@@ -95,26 +99,26 @@ class IndexSynchronizer:
         self.open_index()
 
     def open_index(self):
-        """Opens an index or raise an exception."""
+        """Open an index or raise an exception."""
         res = r.post(self.host+'/'+self.index+'/_open').json()
         if res.get('ok') is not True:
             raise RuntimeError('cannot open index: %s' % res)
         logger.info('open index %s', self.index)
 
     def close_index(self):
-        """Closes an index or raise an exception."""
+        """Close an index or raise an exception."""
         res = r.post(self.host+'/'+self.index+'/_close').json()
         if res.get('ok') is not True:
             raise RuntimeError('cannot close index: %s' % res)
         logger.info('close index %s', self.index)
 
     def parse_stopwords(self, filename):
-        """Parses stopwords in given file eliminating comment and empty lines."""
+        """Parse stopwords in given file eliminating comment and empty lines."""
         with open(filename) as f:
             return [l for l in f.readlines() if not l.startswith('#') and not len(l)]
 
     def synchronize_config(self):
-        """Returns query data for reindexing an index to itself (changing type)."""
+        """Return query data for reindexing an index to itself (changing type)."""
         selector_script = {}
         if self.selector_script is not None:
             selector_script['script'] = {
@@ -165,7 +169,7 @@ class IndexSynchronizer:
         }
 
     def analyzer_config(self):
-        """Returns query data for adding an analyzer."""
+        """Return query data for adding an analyzer."""
         return {
             "analysis": {
                 "analyzer": {
