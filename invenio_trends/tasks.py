@@ -38,7 +38,7 @@ logger = logging.getLogger(__name__)
 def index_synchronizer():
     """Synchronize index task."""
     logging.info('running index_synchronizer task')
-    index = IndexSynchronizer(TRENDS_PARAMS)
-    index.setup_analyzer()
-    index.setup_mappings()
-    index.synchronize()
+    index_sync = IndexSynchronizer(TRENDS_PARAMS)
+    index_sync.setup_analyzer()
+    index_sync.setup_mappings()
+    index_sync.synchronize()

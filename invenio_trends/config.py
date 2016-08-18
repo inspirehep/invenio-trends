@@ -35,8 +35,8 @@ TRENDS_PARAMS = {
         'doc_type': 'hep',
     },
     'analysis': {
-        'analysis_field': 'analysis',
-        'date_field': 'date',
+        'analysis_field': 'trends-analysis',
+        'date_field': 'trends-date',
         'doc_type': 'trends',
     },
     'minimum_date': '2013-02-01',

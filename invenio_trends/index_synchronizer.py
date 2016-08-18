@@ -26,7 +26,7 @@
 
 import logging
 
-import Requests as r
+import requests as r
 
 logger = logging.getLogger(__name__)
 
@@ -60,7 +60,9 @@ class IndexSynchronizer:
         """Reindex entries to new analysed type."""
         logger.info('reindex %s started', self.index)
         reindex = self.synchronize_config()
-        res = r.post(self.host+'/_reindex', data=reindex).json()
+        res = r.post(self.host + '/_reindex', json=reindex).json()
+
+        r.post(self.host + '/trends-reindex/_alias/' + self.index)
 
         if res.get('ok') is not True:
             raise RuntimeError('cannot reindex: %s' % res)
@@ -74,16 +76,16 @@ class IndexSynchronizer:
                     "type": "date",
                     "format": "strict_date_optional_time||epoch_millis"
                 },
-                self.src_analysis_fld: {
+                self.ana_analysis_fld: {
                     "type": "string",
                     "term_vector": "yes",
-                    "analyzer": "trends_analyser"
+                    "analyzer": "trends_analyzer"
                 }
             }
         }
 
-        res = r.put(self.host+'/'+self.index+'/_mapping/'+self.src_doc_type, data=mappings).json()
-        if res.get('ok') is not True:
+        res = r.put(self.host + '/' + self.index + '/_mapping/' + self.ana_doc_type, json=mappings).json()
+        if res.get('acknowledged') is not True:
             raise RuntimeError('cannot create mappings: %s' % res)
 
     def setup_analyzer(self):
@@ -91,9 +93,9 @@ class IndexSynchronizer:
         self.close_index()
 
         analyser = self.analyzer_config()
-        res = r.put(self.host+'/'+self.index+'/_settings', data=analyser).json()
+        res = r.put(self.host + '/' + self.index + '/_settings', json=analyser).json()
 
-        if res.get('ok') is not True:
+        if res.get('acknowledged') is not True:
             raise RuntimeError('cannot add analyzer: %s' % res)
         logger.info('setup analyzer')
 
@@ -101,22 +103,22 @@ class IndexSynchronizer:
 
     def open_index(self):
         """Open an index or raise an exception."""
-        res = r.post(self.host+'/'+self.index+'/_open').json()
-        if res.get('ok') is not True:
+        res = r.post(self.host + '/' + self.index + '/_open').json()
+        if res.get('acknowledged') is not True:
             raise RuntimeError('cannot open index: %s' % res)
         logger.info('open index %s', self.index)
 
     def close_index(self):
         """Close an index or raise an exception."""
-        res = r.post(self.host+'/'+self.index+'/_close').json()
-        if res.get('ok') is not True:
+        res = r.post(self.host + '/' + self.index + '/_close').json()
+        if res.get('acknowledged') is not True:
             raise RuntimeError('cannot close index: %s' % res)
         logger.info('close index %s', self.index)
 
     def parse_stopwords(self, filename):
         """Parse stopwords in given file eliminating comment and empty lines."""
         with open(filename) as f:
-            return [l for l in f.readlines() if not l.startswith('#') and not len(l)]
+            return [l for l in f.read().splitlines() if not l.startswith('#') and len(l)]
 
     def synchronize_config(self):
         """Return query data for reindexing an index to itself (changing type)."""
@@ -164,8 +166,8 @@ class IndexSynchronizer:
                 "type": self.ana_doc_type
             },
             "script": {
-                "inline": 'ctx._source.'+self.ana_analysis_fld+' = ctx._source.remove("'+self.src_analysis_fld+'");'
-                          'ctx._source.'+self.ana_date_fld+' = ctx._source.remove("'+self.src_date_fld+'");'
+                "inline": 'ctx._source.' + self.ana_analysis_fld + ' = ctx._source.remove("' + self.src_analysis_fld + '");'  +
+                          'ctx._source.' + self.ana_date_fld + ' = ctx._source.remove("' + self.src_date_fld + '");'
             }
         }
 
@@ -174,7 +176,7 @@ class IndexSynchronizer:
         return {
             "analysis": {
                 "analyzer": {
-                    "trends_analyser": {
+                    "trends_analyzer": {
                         "type": "custom",
                         "tokenizer": "icu_tokenizer",
                         "char_filter": [
@@ -210,20 +212,20 @@ class IndexSynchronizer:
                     },
                     "trends_number_removal": {
                         "type": "pattern_replace",
-                        "pattern": "([0-9]+)",
+                        "pattern": "([0-9] + )",
                         "replacement": ""
                     },
                     "trends_latex_removal": {
                         "type": "pattern_replace",
-                        "pattern": "(\\$[^\\$]+\\$)",
+                        "pattern": "(\\$[^\\$] + \\$)",
                         "replacement": ""
                     },
                     "trends_spacing_removal": {
                         "type": "pattern_replace",
-                        "pattern": "( +)",
+                        "pattern": "(  + )",
                         "replacement": " "
                     },
-                    "ctrends_stopwords": {
+                    "trends_stopwords": {
                         "type": "stop",
                         "stopwords": self.parse_stopwords(self.stopwords_file),
                         "ignore_case": True,
