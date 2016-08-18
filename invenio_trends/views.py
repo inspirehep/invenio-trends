@@ -137,4 +137,3 @@ def internal_error(e=""):
     mes = "internal error: " + e
     logger.error(mes)
     return make_response(jsonify(error=mes), 500)
-

@@ -101,7 +101,6 @@ setup(
     include_package_data=True,
     platforms='any',
     entry_points={
-        # TODO: Edit these entry points to fit your needs.
         # 'invenio_base.apps': [
         #     'invenio_trends = invenio_trends:InvenioTrends',
         # ],
@@ -110,7 +109,7 @@ setup(
         # ],
         # 'invenio_access.actions': [],
         # 'invenio_admin.actions': [],
-        #'invenio_assets.bundles': [],
+        # 'invenio_assets.bundles': [],
         # 'invenio_base.api_apps': [],
         # 'invenio_base.api_blueprints': [],
         # 'invenio_base.blueprints': [],
