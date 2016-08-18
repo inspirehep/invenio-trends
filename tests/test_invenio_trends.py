@@ -24,8 +24,6 @@
 
 """Module tests."""
 
-from __future__ import absolute_import, print_function
-
 from flask import Flask
 from flask_babelex import Babel
 
@@ -41,7 +39,7 @@ def test_version():
 def test_init():
     """Test extension initialization."""
     app = Flask('testapp')
-    ext = InvenioTrends(app)
+    InvenioTrends(app)
     assert 'invenio-trends' in app.extensions
 
     app = Flask('testapp')
