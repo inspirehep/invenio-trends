@@ -22,7 +22,6 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-
 """Module tests."""
 
 from __future__ import absolute_import, print_function
@@ -52,11 +51,11 @@ def test_init():
     assert 'invenio-trends' in app.extensions
 
 
-def test_view(app):
-    """Test view."""
-    Babel(app)
-    InvenioTrends(app)
-    with app.test_client() as client:
-        res = client.get("/")
-        assert res.status_code == 200
-        assert 'Welcome to Invenio-Trends' in str(res.data)
+# def test_view(app):
+#    """Test view."""
+#    Babel(app)
+#    InvenioTrends(app)
+#    with app.test_client() as client:
+#        res = client.get("/")
+#        assert res.status_code == 200
+#        assert 'Welcome to Invenio-Trends' in str(res.data)

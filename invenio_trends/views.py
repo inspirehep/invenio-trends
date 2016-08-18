@@ -31,13 +31,8 @@ import logging
 from flask import Blueprint, jsonify, make_response
 from invenio_search import RecordsSearch
 
-logger = logging.getLogger('routes')
-logger.setLevel(logging.INFO)
-ch = logging.StreamHandler()
-ch.setLevel(logging.DEBUG)
-formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-ch.setFormatter(formatter)
-logger.addHandler(ch)
+logger = logging.getLogger(__name__)
+
 
 blueprint = Blueprint(
     'invenio_trends',
@@ -46,25 +41,26 @@ blueprint = Blueprint(
     static_folder='static',
 )
 
-#@blueprint.route("/<int:recid>/") recid
+
+# @blueprint.route("/<int:recid>/") recid
 @blueprint.route("/trends")
 def index():
     """Basic view."""
     return "hello world"
 
+
 @blueprint.route("/trends/search/<string:terms>/")
 def search(terms):
     """."""
     query = RecordsSearch(index="records-hep") \
-                .query("match", abstract=terms) \
-                .fields("earliest_date") \
-                .sort("earliest_date")[:10000] # TODO : better
+        .query("match", abstract=terms) \
+        .fields("earliest_date") \
+        .sort("earliest_date")[:10000]  # TODO : better
 
     res = query.execute()
 
     if not res.success():
         return internal_error("query error")
-
 
     logger.info("search completed in %dms" % res.took)
     logger.info("search returned %d elements" % res.hits.total)
@@ -89,6 +85,7 @@ def search(terms):
     ]
 
     return jsonify(ret)
+
 
 @blueprint.route("/trends/hist/<string:terms>/")
 def hist(terms):
@@ -119,17 +116,21 @@ def hist(terms):
 
     return jsonify(ret)
 
+
 def unauthorized(e=""):
     """Error handler to show a 401.html page in case of a 401 error."""
     return make_response(jsonify(error="unauthorized"), 401)
+
 
 def insufficient_permissions(e=""):
     """Error handler to show a 403.html page in case of a 403 error."""
     return make_response(jsonify(error="insufficient_permissions"), 403)
 
+
 def page_not_found(e=""):
     """Error handler to show a 404.html page in case of a 404 error."""
     return make_response(jsonify(error="not found"), 404)
+
 
 def internal_error(e=""):
     """Error handler to show a 500.html page in case of a 500 error."""

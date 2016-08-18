@@ -26,6 +26,7 @@
 
 from .views import blueprint
 
+
 class InvenioTrends(object):
     """Invenio-Trends extension."""
 
@@ -42,4 +43,3 @@ class InvenioTrends(object):
 
     def init_config(self, app):
         """Initialize configuration."""
-

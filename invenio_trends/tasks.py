@@ -33,6 +33,7 @@ from .index_synchronizer import IndexSynchronizer
 
 logger = logging.getLogger(__name__)
 
+
 @shared_task(ignore_result=True)
 def index_synchronizer():
     """Synchronize index task."""

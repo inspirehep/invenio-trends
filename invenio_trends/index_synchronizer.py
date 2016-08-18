@@ -30,6 +30,7 @@ import Requests as r
 
 logger = logging.getLogger(__name__)
 
+
 class IndexSynchronizer:
     """Synchronization helper for maintaining another index type with customized analyser."""
 
@@ -228,12 +229,12 @@ class IndexSynchronizer:
                         "ignore_case": True,
                         "remove_trailing": True
                     },
-                    "trends_stemmer" : {
+                    "trends_stemmer": {
                         "type": "stemmer",
                         "name": "light_english"
                     },
-                    "trends_bigram" : {
-                        "type" : "shingle",
+                    "trends_bigram": {
+                        "type": "shingle",
                         "min_shingle_size": self.min_ngram,
                         "max_shingle_size": self.max_ngram,
                         "output_unigrams": self.unigram,
@@ -246,4 +247,3 @@ class IndexSynchronizer:
                 }
             }
         }
-

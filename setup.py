@@ -102,12 +102,12 @@ setup(
     platforms='any',
     entry_points={
         # TODO: Edit these entry points to fit your needs.
-        #'invenio_base.apps': [
-        #    'invenio_trends = invenio_trends:InvenioTrends',
-        #],
-        #'invenio_i18n.translations': [
-        #    'messages = invenio_trends',
-        #],
+        # 'invenio_base.apps': [
+        #     'invenio_trends = invenio_trends:InvenioTrends',
+        # ],
+        # 'invenio_i18n.translations': [
+        #     'messages = invenio_trends',
+        # ],
         # 'invenio_access.actions': [],
         # 'invenio_admin.actions': [],
         #'invenio_assets.bundles': [],

@@ -24,6 +24,7 @@
 
 """General utility functions."""
 
+
 def validate_type(obj, tpe, optional=False):
     """Return given object if matching given type or throw an exception."""
     if type(obj) is not tpe and (optional is not True or optional is not None):
