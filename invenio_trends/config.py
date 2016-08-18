@@ -28,16 +28,17 @@ TRENDS_ENDPOINT = "api/trends"
 
 TRENDS_PARAMS = {
     'host': 'http://localhost:9200',
-    'index': 'records-hep',
     'source': {
+        'index': 'records-hep',
         'analysis_field': 'abstracts.value',
         'date_field': 'earliest_date',
         'doc_type': 'hep',
     },
     'analysis': {
-        'analysis_field': 'trends-analysis',
-        'date_field': 'trends-date',
-        'doc_type': 'trends',
+        'index': 'trends-analysis',
+        'analysis_field': 'analysis',
+        'date_field': 'date',
+        'doc_type': 'hep',
     },
     'minimum_date': '2013-02-01',
     'maximum_date': None,

@@ -30,24 +30,26 @@ from pytest import yield_fixture
 from invenio_trends.index_synchronizer import IndexSynchronizer
 
 host = 'http://localhost:9200'
-index = 'invenio-trends-tests'
+src_index = 'source'
+ana_index = 'destination'
 
 PARAMS = {
     'host': host,
-    'index': index,
     'source': {
+        'index': src_index,
         'analysis_field': 'src_ana',
         'date_field': 'src_date',
         'doc_type': 'src',
     },
     'analysis': {
+        'index': ana_index,
         'analysis_field': 'dst_ana',
         'date_field': 'dst_date',
         'doc_type': 'dst',
     },
     'minimum_date': '2015-03-01',
     'maximum_date': '2015-04-01',
-    'filter_script': "d = doc['earliest_date'].date; d.getDayOfMonth() != 3",
+    'filter_script': "d = doc['src_date'].date; d.getDayOfMonth() != 3",
     'unigram': True,
     'minimum_ngram': 2,
     'maximum_ngram': 3,
@@ -74,13 +76,14 @@ index_sync = IndexSynchronizer(PARAMS)
 
 @yield_fixture(scope='module', autouse=True)
 def run_around_tests():
-    r.post(host + '/' + index)
+    r.post(host + '/' + src_index)
     for id, entry in enumerate([entry_correct, entry_early, entry_late, entry_script]):
-        res = r.post(host + '/' + index + '/' + PARAMS['source']['doc_type'] + '/' + str(id), json=entry).json()
+        res = r.post(host + '/' + src_index + '/' + PARAMS['source']['doc_type'] + '/' + str(id), json=entry).json()
 
     yield
 
-    r.delete(host + '/' + index)
+    r.delete(host + '/' + src_index)
+    r.delete(host + '/' + ana_index)
 
 
 def test_parse_stopwords():
@@ -91,23 +94,29 @@ def test_parse_stopwords():
         assert word.find('\n') == -1
 
 
+def test_setup_index():
+    index_sync.setup_index()
+    res = r.get(host + '/' + ana_index).json()
+    assert ana_index in res
+
+
 def test_setup_analyzer():
-    before = r.get(host + '/' + index + '/_settings').json()
-    assert 'analysis' not in before[index]['settings']['index']
+    before = r.get(host + '/' + ana_index + '/_settings').json()
+    assert 'analysis' not in before[ana_index]['settings']['index']
 
     index_sync.setup_analyzer()
-    after = r.get(host + '/' + index + '/_settings')
-    assert 'analysis' in after.json()[index]['settings']['index']
+    after = r.get(host + '/' + ana_index + '/_settings')
+    assert 'analysis' in after.json()[ana_index]['settings']['index']
 
 
 def test_setup_mapping():
     index_sync.setup_mappings()
     ana_field = PARAMS['analysis']['analysis_field']
     ana_type = PARAMS['analysis']['doc_type']
-    mappings = r.get(host + '/' + index + '/_mapping/' + PARAMS['analysis']['doc_type'] + '/field/' +
+    mappings = r.get(host + '/' + ana_index + '/_mapping/' + PARAMS['analysis']['doc_type'] + '/field/' +
                      PARAMS['analysis']['analysis_field']).json()
 
-    ana_mapping = mappings[index]['mappings'][ana_type][ana_field]['mapping'][ana_field]
+    ana_mapping = mappings[ana_index]['mappings'][ana_type][ana_field]['mapping'][ana_field]
     assert ana_mapping['analyzer'] == 'trends_analyzer'
     assert ana_mapping['term_vector'] == 'yes'
 
@@ -115,5 +124,5 @@ def test_setup_mapping():
 def test_synchronize():
     index_sync.synchronize()
 
-    entries = r.post(host + '/' + index + '/_search', json={'query': {'match_all': {}}})
+    entries = r.post(host + '/' + ana_index + '/_search', json={'query': {'match_all': {}}})
     print(entries)

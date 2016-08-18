@@ -42,3 +42,42 @@ def index_synchronizer():
     index_sync.setup_analyzer()
     index_sync.setup_mappings()
     index_sync.synchronize()
+
+
+GET invenio-trends-tests/
+{
+    "dest": {
+		"index": "destination",
+		"type": "dst"
+	},
+	"source": {
+		"index": "source",
+		"_source": ["src_ana", "src_date"],
+		"type": "src",
+		"query": {
+			"bool": {
+				"filter": [{
+					"exists": [{
+						"field": "src_ana"
+					}, {
+						"field": "src_date"
+					}]
+				}, {
+					"range": {
+						"src_date": {
+							"gt": "2015-03-01",
+							"lte": "2015-04-01"
+						}
+					}
+				}, {
+					"script": {
+						"script": "d = doc[\"src_date\"].date; d.getDayOfMonth() != 3"
+					}
+				}]
+			}
+		}
+	},
+	"script": {
+		"inline": "ctx._source.dst_ana = ctx._source.remove(\"src_ana\");ctx._source.dst_date = ctx._source.remove(\"src_date\");"
+	}
+}
