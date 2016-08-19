@@ -26,7 +26,10 @@
 
 import logging
 
+import invenio_trends
 import requests as r
+
+from invenio_trends import analysis
 
 logger = logging.getLogger(__name__)
 
@@ -57,20 +60,11 @@ class IndexSynchronizer:
         self.max_ngram = config['maximum_ngram']
         self.stopwords_file = config['stopwords_file']
 
-    def synchronize(self):
-        """Reindex entries to new analysed type."""
-        logger.info('reindex %s to %s started', self.src_index, self.ana_index)
-        reindex = self.synchronize_config()
-        res = r.post(self.host + '/_reindex', json=reindex).json()
-
-        if res.get('timed_out') != False:
-            raise RuntimeError('timeout during reindexing: %s' % res)
-        logger.info('reindex %s to %s terminated: %d created, %d updated', self.src_index, self.ana_index,
-                    res['created'], res['updated'])
 
     def setup_index(self):
         """Create analysis index if it does not exist yet."""
         r.post(self.host + '/' + self.ana_index)  # might already exist
+
 
     def setup_mappings(self):
         """Create mappings for analyzed field and date field."""
@@ -92,6 +86,7 @@ class IndexSynchronizer:
         if res.get('acknowledged') != True:
             raise RuntimeError('cannot create mappings: %s' % res)
 
+
     def setup_analyzer(self):
         """Create customized analyser into the new type resulting into a short downtime for the whole index."""
         self.close_index()
@@ -105,12 +100,26 @@ class IndexSynchronizer:
 
         self.open_index()
 
+
+    def synchronize(self):
+        """Reindex entries to new analysed type."""
+        logger.info('reindex %s to %s started', self.src_index, self.ana_index)
+        reindex = self.synchronize_config()
+        res = r.post(self.host + '/_reindex', json=reindex).json()
+
+        if res.get('timed_out') != False:
+            raise RuntimeError('timeout during reindexing: %s' % res)
+        logger.info('reindex %s to %s terminated: %d created, %d updated', self.src_index, self.ana_index,
+                    res['created'], res['updated'])
+
+
     def open_index(self):
         """Open an index or raise an exception."""
         res = r.post(self.host + '/' + self.ana_index + '/_open').json()
         if res.get('acknowledged') != True:
             raise RuntimeError('cannot open index: %s' % res)
         logger.info('open index %s', self.ana_index)
+
 
     def close_index(self):
         """Close an index or raise an exception."""
@@ -119,10 +128,12 @@ class IndexSynchronizer:
             raise RuntimeError('cannot close index: %s' % res)
         logger.info('close index %s', self.ana_index)
 
+
     def parse_stopwords(self, filename):
         """Parse stopwords in given file eliminating comment and empty lines."""
         with open(filename) as f:
             return [l for l in f.read().splitlines() if not l.startswith('#') and len(l)]
+
 
     def synchronize_config(self):
         """Return query data for reindexing an index to itself (changing type)."""
@@ -175,6 +186,7 @@ class IndexSynchronizer:
             }
         }
 
+
     def analyzer_config(self):
         """Return query data for adding an analyzer."""
         return {
@@ -216,17 +228,17 @@ class IndexSynchronizer:
                     },
                     "trends_number_removal": {
                         "type": "pattern_replace",
-                        "pattern": "([0-9] + )",
+                        "pattern": "([0-9]+)",
                         "replacement": ""
                     },
                     "trends_latex_removal": {
                         "type": "pattern_replace",
-                        "pattern": "(\\$[^\\$] + \\$)",
+                        "pattern": "(\\$[^\\$]+\\$)",
                         "replacement": ""
                     },
                     "trends_spacing_removal": {
                         "type": "pattern_replace",
-                        "pattern": "(  + )",
+                        "pattern": "( +)",
                         "replacement": " "
                     },
                     "trends_stopwords": {

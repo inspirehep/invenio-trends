@@ -43,7 +43,7 @@ class TrendsDetector:
     def __init__(self, config):
         """Set up a new trends detector."""
 
-        self.client = Elasticsearch()
+        self.client = Elasticsearch(hosts=[config['host']])
         self.index = config['analysis']['index']
         self.date_field = config['analysis']['date_field']
         self.analysis_field = config['analysis']['analysis_field']
@@ -65,14 +65,14 @@ class TrendsDetector:
         hists = self.terms_histograms(terms, background_start, reference_date, gran)
         scores = self.hist_scores(hists, foreground_start, smoothing_len)
         trending = self.classify_scores(scores, num_cluster)
-        trends = self.prune_score(trending, num_trends)
+        trends = self.prune_scores(trending, num_trends)
 
         return trends
 
 
     def interval_ids(self, start, end):
         """Retrieve list of ids occurring between start and end."""
-        q = Search(index=self.index) \
+        q = Search(using=self.client, index=self.index) \
             .fields(['']) \
             .filter('exists', field=self.analysis_field) \
             .filter('range', **{self.date_field: {'gt': start, 'lte': end}})
@@ -151,15 +151,15 @@ class TrendsDetector:
         return scores[pred == trending_cluster]
 
 
-    def prune_score(self, scores, num_trends):
+    def prune_scores(self, scores, num_trends):
         """Compute newness and keep only selected."""
         newest = sorted(scores, key=lambda x: -x[1]['doc_freq'] / x[1]['doc_total'])
-        return newest
+        return newest[:num_trends]
 
 
     def date_histogram(self, start, end, granularity, term=None):
         """Retrieve the date histogram of all entries or a single term is given"""
-        q = Search(index=self.index)[0:0] \
+        q = Search(using=self.client, index=self.index)[0:0] \
             .filter('range', **{self.date_field: {'gt': start, 'lte': end}})
         if term != None:
             q = q.query('match_phrase', **{self.analysis_field: term})

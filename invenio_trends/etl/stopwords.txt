@@ -189,8 +189,7 @@ arctan
 arg
 atop
 atopwithdelims
-big,
-Big,
+big
 bigg
 biggl
 biggr
@@ -228,7 +227,9 @@ fbox
 frac
 fracwithdelims
 gcd
+ge
 genfrac
+geq
 hat
 hdotsfor
 hom
@@ -243,8 +244,10 @@ ker
 label
 langle
 ldots
+le
 left
 leftroot
+leq
 lg
 lim
 liminf

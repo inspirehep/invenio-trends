@@ -24,6 +24,10 @@
 
 """Configuration options."""
 
+import os
+
+from invenio_trends import analysis
+
 TRENDS_ENDPOINT = "api/trends"
 
 TRENDS_PARAMS = {
@@ -46,5 +50,5 @@ TRENDS_PARAMS = {
     'unigram': True,
     'minimum_ngram': 2,
     'maximum_ngram': 3,
-    'stopwords_file': 'stopwords.txt',
+    'stopwords_file': os.path.dirname(analysis.__file__) + '/stopwords.txt',
 }

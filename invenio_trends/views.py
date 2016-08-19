@@ -29,7 +29,6 @@ from __future__ import absolute_import, print_function
 import logging
 
 from flask import Blueprint, jsonify, make_response
-from invenio_search import RecordsSearch
 
 logger = logging.getLogger(__name__)
 
