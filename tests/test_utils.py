@@ -22,17 +22,36 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Granularity mappings."""
+"""Utils tests."""
 
-from datetime import timedelta
-from enum import Enum
+from datetime import datetime
+from invenio_trends.utils import parse_iso_date, unzip_date_value, safe_divide
+import numpy as np
 
 
-class Granularity(Enum):
-    second = timedelta(seconds=1)
-    minute = timedelta(minutes=1)
-    hour = timedelta(hours=1)
-    day = timedelta(days=1)
-    week = timedelta(weeks=1)
-    month = timedelta(hours=730)
-    year = timedelta(hours=8760)
+def test_parse_iso_date():
+    date = parse_iso_date('2015-02-05T08:47:22.01Z')
+    assert date == parse_iso_date('2015-02-05T08:47:22.01')
+    assert date.year == 2015
+    assert date.month == 2
+    assert date.day == 5
+    assert date.hour == 8
+    assert date.minute == 47
+    assert date.second == 22
+    assert date.microsecond == 10000
+
+
+def test_parse_iso_date_loop():
+    date = datetime(2016, 4, 8, 9, 48, 23, 20000)
+    assert date == parse_iso_date(date.isoformat())
+
+
+def test_safe_divide():
+    numer = [4, 4, 0, 1, np.nan, np.infty, -np.infty]
+    denom = [2, 1, 1, 0, 1, 0, 0]
+    res = [2, 4, 0, 0, 0, 0, 0]
+    assert np.array_equal(safe_divide(numer, denom), res)
+
+
+def test_safe_divide_empty():
+    assert np.array_equal(safe_divide([], []), [])
