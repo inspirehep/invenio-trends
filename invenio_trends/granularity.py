@@ -22,24 +22,16 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Tasks to be periodically scheduled."""
+"""Granularity mappings."""
 
-import logging
+from datetime import timedelta
+from enum import Enum
 
-from celery import shared_task
-
-from .config import TRENDS_PARAMS
-from .index_synchronizer import IndexSynchronizer
-
-logger = logging.getLogger(__name__)
-
-
-@shared_task(ignore_result=True)
-def index_synchronizer():
-    """Synchronize index task."""
-    logging.info('running index_synchronizer task')
-    index_sync = IndexSynchronizer(TRENDS_PARAMS)
-    index_sync.setup_index()
-    index_sync.setup_analyzer()
-    index_sync.setup_mappings()
-    index_sync.synchronize()
+class Granularity(Enum):
+    second = timedelta(seconds=1)
+    minute = timedelta(minutes=1)
+    hour = timedelta(hours=1)
+    day = timedelta(days=1)
+    week = timedelta(weeks=1)
+    month = timedelta(hours=730)
+    year = timedelta(hours=8760)
