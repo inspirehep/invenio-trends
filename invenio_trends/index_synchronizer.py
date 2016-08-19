@@ -63,7 +63,7 @@ class IndexSynchronizer:
         reindex = self.synchronize_config()
         res = r.post(self.host + '/_reindex', json=reindex).json()
 
-        if res.get('timed_out') is not False:
+        if res.get('timed_out') != False:
             raise RuntimeError('timeout during reindexing: %s' % res)
         logger.info('reindex %s to %s terminated: %d created, %d updated', self.src_index, self.ana_index,
                     res['created'], res['updated'])
@@ -89,7 +89,7 @@ class IndexSynchronizer:
         }
 
         res = r.put(self.host + '/' + self.ana_index + '/_mapping/' + self.ana_doc_type, json=mappings).json()
-        if res.get('acknowledged') is not True:
+        if res.get('acknowledged') != True:
             raise RuntimeError('cannot create mappings: %s' % res)
 
     def setup_analyzer(self):
@@ -99,7 +99,7 @@ class IndexSynchronizer:
         analyser = self.analyzer_config()
         res = r.put(self.host + '/' + self.ana_index + '/_settings', json=analyser).json()
 
-        if res.get('acknowledged') is not True:
+        if res.get('acknowledged') != True:
             raise RuntimeError('cannot add analyzer: %s' % res)
         logger.info('setup analyzer')
 
@@ -108,14 +108,14 @@ class IndexSynchronizer:
     def open_index(self):
         """Open an index or raise an exception."""
         res = r.post(self.host + '/' + self.ana_index + '/_open').json()
-        if res.get('acknowledged') is not True:
+        if res.get('acknowledged') != True:
             raise RuntimeError('cannot open index: %s' % res)
         logger.info('open index %s', self.ana_index)
 
     def close_index(self):
         """Close an index or raise an exception."""
         res = r.post(self.host + '/' + self.ana_index + '/_close').json()
-        if res.get('acknowledged') is not True:
+        if res.get('acknowledged') != True:
             raise RuntimeError('cannot close index: %s' % res)
         logger.info('close index %s', self.ana_index)
 
@@ -127,7 +127,7 @@ class IndexSynchronizer:
     def synchronize_config(self):
         """Return query data for reindexing an index to itself (changing type)."""
         selector_script = {}
-        if self.selector_script is not None:
+        if self.selector_script != None:
             selector_script['script'] = {
                 'script': self.selector_script
             }

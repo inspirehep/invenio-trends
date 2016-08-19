@@ -24,14 +24,16 @@
 
 """Index synchronizer tests."""
 
+from time import sleep
+
 import requests as r
 from pytest import yield_fixture
 
 from invenio_trends.index_synchronizer import IndexSynchronizer
 
 host = 'http://localhost:9200'
-src_index = 'source'
-ana_index = 'destination'
+src_index = 'invenio-trends-test-source'
+ana_index = 'invenio-trends-test-destination'
 
 PARAMS = {
     'host': host,
@@ -78,10 +80,10 @@ index_sync = IndexSynchronizer(PARAMS)
 def run_around_tests():
     r.post(host + '/' + src_index)
     for id, entry in enumerate([entry_correct, entry_early, entry_late, entry_script]):
-        res = r.post(host + '/' + src_index + '/' + PARAMS['source']['doc_type'] + '/' + str(id), json=entry).json()
+        r.post(host + '/' + src_index + '/' + PARAMS['source']['doc_type'] + '/' + str(id), json=entry).json()
 
+    sleep(1)
     yield
-
     r.delete(host + '/' + src_index)
     r.delete(host + '/' + ana_index)
 
@@ -89,7 +91,7 @@ def run_around_tests():
 def test_parse_stopwords():
     stopwords = index_sync.parse_stopwords(PARAMS['stopwords_file'])
     for word in stopwords:
-        assert word is not ''
+        assert word != ''
         assert not word.startswith('#')
         assert word.find('\n') == -1
 
@@ -123,6 +125,13 @@ def test_setup_mapping():
 
 def test_synchronize():
     index_sync.synchronize()
+    sleep(1)
 
-    entries = r.post(host + '/' + ana_index + '/_search', json={'query': {'match_all': {}}})
-    print(entries)
+    entries = r.post(host + '/' + ana_index + '/_search', json={'query': {'match_all': {}}}).json()
+    hits = entries['hits']['hits']
+
+    assert len(hits) == 1
+    assert hits[0]['_source'] == {
+        PARAMS['analysis']['analysis_field']: entry_correct[PARAMS['source']['analysis_field']],
+        PARAMS['analysis']['date_field']: entry_correct[PARAMS['source']['date_field']],
+    }
