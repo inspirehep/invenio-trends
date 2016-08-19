@@ -24,5 +24,28 @@
 
 """Histograms utility."""
 
+from elasticsearch_dsl import Search
+from utils import parse_iso_date
+import numpy as np
 
 
+def unzip_date_value(date_value_list):
+    """Transform a list of dict into two ndarray containing dates and values."""
+    x, y = zip(*[(parse_iso_date(elem.key_as_string), elem.doc_count) for elem in date_value_list])
+    return np.array(x), np.array(y)
+
+
+def date_histogram(index, start, end, granularity, date_field, analysis_field, term=None):
+    """Retrieve the date histogram of all entries or a single term is given"""
+    q = Search(index=index)[0:0] \
+        .filter('range', **{date_field: {'gt': start, 'lte': end}})
+    if term != None:
+        q = q.query('match_phrase', **{analysis_field: term})
+    q.aggs.bucket(
+        'hist',
+        'date_histogram',
+        field=date_field,
+        interval=granularity.name,
+        format='date_optional_time'
+    )
+    return unzip_date_value(q.execute().aggregations.hist.buckets)

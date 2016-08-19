@@ -36,12 +36,6 @@ def parse_iso_date(str):
         return datetime.strptime(str, '%Y-%m-%dT%H:%M:%S.%fZ')
 
 
-def unzip_date_value(date_value_list):
-    """Transform a list of dict into two ndarray containing dates and values."""
-    x, y = zip(*[(parse_iso_date(elem.key_as_string), elem.doc_count) for elem in date_value_list])
-    return np.array(x), np.array(y)
-
-
 def safe_divide(numerators, denominators):
     """Return divisions result being 0 on edge cases (/0, NaN, etc.)."""
     with np.errstate(divide='ignore', invalid='ignore'):
