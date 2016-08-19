@@ -25,7 +25,7 @@
 """Utils tests."""
 
 from datetime import datetime
-from invenio_trends.utils import parse_iso_date, unzip_date_value, safe_divide
+from invenio_trends.analysis.utils import parse_iso_date, safe_divide
 import numpy as np
 
 

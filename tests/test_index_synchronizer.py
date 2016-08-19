@@ -29,7 +29,7 @@ from time import sleep
 import requests as r
 from pytest import yield_fixture
 
-from invenio_trends.index_synchronizer import IndexSynchronizer
+from invenio_trends.etl.index_synchronizer import IndexSynchronizer
 
 host = 'http://localhost:9200'
 src_index = 'invenio-trends-test-source'
@@ -55,7 +55,7 @@ PARAMS = {
     'unigram': True,
     'minimum_ngram': 2,
     'maximum_ngram': 3,
-    'stopwords_file': '../invenio_trends/stopwords.txt',
+    'stopwords_file': '../invenio_trends/etl/stopwords.txt',
 }
 
 entry_correct = {
