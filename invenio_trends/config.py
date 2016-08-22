@@ -32,18 +32,13 @@ TRENDS_ENDPOINT = "api/trends"
 
 TRENDS_PARAMS = {
     'host': 'http://localhost:9200',
-    'source': {
-        'index': 'records-hep',
-        'analysis_field': 'abstracts.value',
-        'date_field': 'earliest_date',
-        'doc_type': 'hep',
-    },
-    'analysis': {
-        'index': 'trends-analysis',
-        'analysis_field': 'analysis',
-        'date_field': 'date',
-        'doc_type': 'hep',
-    },
+    'index': 'trends-analysis',
+    'source_index': 'records-hep',
+    'doc_type': 'hep',
+    'analysis_field': 'abstracts.value',
+    'date_field': 'earliest_date',
+    'id_field': 'self_recid',
+    'tokenizer': 'icu_tokenizer',
     'minimum_date': '2013-02-01',
     'maximum_date': None,
     'filter_script': "d = doc['earliest_date'].date; d.getDayOfYear() != 1",

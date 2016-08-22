@@ -41,16 +41,14 @@ class IndexSynchronizer:
         """Unwrapping configuration defined in config.py."""
         self.host = config['host']
 
-        self.src_index = config['source']['index']
-        self.src_analysis_fld = config['source']['analysis_field']
-        self.src_date_fld = config['source']['date_field']
-        self.src_doc_type = config['source']['doc_type']
+        self.index = config['index']
+        self.src_index = config['source_index']
+        self.doc_type = config['doc_type']
+        self.analysis_fld = config['analysis_field']
+        self.date_fld = config['date_field']
+        self.id_fld = config['id_field']
 
-        self.ana_index = config['analysis']['index']
-        self.ana_analysis_fld = config['analysis']['analysis_field']
-        self.ana_date_fld = config['analysis']['date_field']
-        self.ana_doc_type = config['analysis']['doc_type']
-
+        self.tokenizer = config['tokenizer']
         self.min_date = config['minimum_date']
         self.max_date = config['maximum_date']
         self.selector_script = config['filter_script']
@@ -63,36 +61,51 @@ class IndexSynchronizer:
 
     def setup_index(self):
         """Create analysis index if it does not exist yet."""
-        r.post(self.host + '/' + self.ana_index)  # might already exist
+        r.post(self.host + '/' + self.index)  # might already exist
 
 
     def setup_mappings(self):
-        """Create mappings for analyzed field and date field."""
-        mappings = {
-            "properties": {
-                self.ana_date_fld: {
+        """Create mappings for analyzed field and date field (short index downtime)."""
+        self.close_index()
+
+        def forge(path, default):
+            if len(path):
+                head = path.pop(0)
+                return {head: forge(path, default)}
+            return default
+
+        def property(field, type):
+            segments = [seg for subfield in field.split(".") for seg in ['properties', subfield]]
+            return forge(segments[1:], type).items()[0]
+
+        properties = [
+            property(self.date_fld, {
                     "type": "date",
                     "format": "strict_date_optional_time||epoch_millis"
-                },
-                self.ana_analysis_fld: {
-                    "type": "string",
-                    "term_vector": "yes",
-                    "analyzer": "trends_analyzer"
-                }
-            }
+            }),
+            property(self.analysis_fld, {
+                "type": "string",
+                "term_vector": "yes",
+                "analyzer": "trends_analyzer"
+            })
+        ]
+        mappings = {
+            "properties": dict((field, type) for field, type in properties)
         }
 
-        res = r.put(self.host + '/' + self.ana_index + '/_mapping/' + self.ana_doc_type, json=mappings).json()
+        res = r.put(self.host + '/' + self.index + '/_mapping/' + self.doc_type, json=mappings).json()
         if res.get('acknowledged') != True:
             raise RuntimeError('cannot create mappings: %s' % res)
 
+        self.open_index()
+
 
     def setup_analyzer(self):
-        """Create customized analyser into the new type resulting into a short downtime for the whole index."""
+        """Create customized analyser into the new type (short index downtime)."""
         self.close_index()
 
         analyser = self.analyzer_config()
-        res = r.put(self.host + '/' + self.ana_index + '/_settings', json=analyser).json()
+        res = r.put(self.host + '/' + self.index + '/_settings', json=analyser).json()
 
         if res.get('acknowledged') != True:
             raise RuntimeError('cannot add analyzer: %s' % res)
@@ -103,30 +116,30 @@ class IndexSynchronizer:
 
     def synchronize(self):
         """Reindex entries to new analysed type."""
-        logger.info('reindex %s to %s started', self.src_index, self.ana_index)
+        logger.info('reindex %s to %s started', self.src_index, self.index)
         reindex = self.synchronize_config()
         res = r.post(self.host + '/_reindex', json=reindex).json()
 
         if res.get('timed_out') != False:
             raise RuntimeError('timeout during reindexing: %s' % res)
-        logger.info('reindex %s to %s terminated: %d created, %d updated', self.src_index, self.ana_index,
+        logger.info('reindex %s to %s terminated: %d created, %d updated', self.src_index, self.index,
                     res['created'], res['updated'])
 
 
     def open_index(self):
         """Open an index or raise an exception."""
-        res = r.post(self.host + '/' + self.ana_index + '/_open').json()
+        res = r.post(self.host + '/' + self.index + '/_open').json()
         if res.get('acknowledged') != True:
             raise RuntimeError('cannot open index: %s' % res)
-        logger.info('open index %s', self.ana_index)
+        logger.info('open index %s', self.index)
 
 
     def close_index(self):
         """Close an index or raise an exception."""
-        res = r.post(self.host + '/' + self.ana_index + '/_close').json()
+        res = r.post(self.host + '/' + self.index + '/_close').json()
         if res.get('acknowledged') != True:
             raise RuntimeError('cannot close index: %s' % res)
-        logger.info('close index %s', self.ana_index)
+        logger.info('close index %s', self.index)
 
 
     def parse_stopwords(self, filename):
@@ -145,23 +158,23 @@ class IndexSynchronizer:
         return {
             "source": {
                 "index": self.src_index,
-                "type": self.src_doc_type,
+                "type": self.doc_type,
                 "query": {
                     "bool": {
                         "filter": [
                             {
                                 "exists": {
-                                    "field": self.src_analysis_fld
+                                    "field": self.analysis_fld
                                 }
                             },
                             {
                                 "exists": {
-                                    "field": self.src_date_fld
+                                    "field": self.date_fld
                                 }
                             },
                             {
                                 "range": {
-                                    self.src_date_fld: {
+                                    self.date_fld: {
                                         "gt": self.min_date,
                                         "lte": self.max_date
                                     }
@@ -172,17 +185,14 @@ class IndexSynchronizer:
                     }
                 },
                 "_source": [
-                    self.src_analysis_fld,
-                    self.src_date_fld
+                    self.analysis_fld,
+                    self.date_fld,
+                    self.id_fld
                 ]
             },
             "dest": {
-                "index": self.ana_index,
-                "type": self.ana_doc_type
-            },
-            "script": {
-                "inline": 'ctx._source.' + self.ana_analysis_fld + ' = ctx._source.remove("' + self.src_analysis_fld + '");'  +
-                          'ctx._source.' + self.ana_date_fld + ' = ctx._source.remove("' + self.src_date_fld + '");'
+                "index": self.index,
+                "type": self.doc_type
             }
         }
 
@@ -194,7 +204,7 @@ class IndexSynchronizer:
                 "analyzer": {
                     "trends_analyzer": {
                         "type": "custom",
-                        "tokenizer": "icu_tokenizer",
+                        "tokenizer": self.tokenizer,
                         "char_filter": [
                             "html_strip"
                         ],
