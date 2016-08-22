@@ -75,7 +75,8 @@ install_requires = [
     'enum34',
     'redis',
     'celery',
-    'scikit-learn'
+    'scipy',
+    'scikit-learn',
 ]
 
 packages = find_packages()

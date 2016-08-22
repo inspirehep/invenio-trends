@@ -24,11 +24,12 @@
 
 """Invenio module that adds a trends api to the platform."""
 
-from __future__ import absolute_import, print_function
+from config import TRENDS_ENDPOINT, TRENDS_PARAMS
+from analysis.trends_detector import TrendsDetector
+from flask import Blueprint, request, jsonify, make_response
 
 import logging
 
-from flask import Blueprint, jsonify, make_response
 
 logger = logging.getLogger(__name__)
 
@@ -36,84 +37,30 @@ logger = logging.getLogger(__name__)
 blueprint = Blueprint(
     'invenio_trends',
     __name__,
-    template_folder='templates',
-    static_folder='static',
+    url_prefix=TRENDS_ENDPOINT
 )
 
 
 # @blueprint.route("/<int:recid>/") recid
-@blueprint.route("/trends")
+@blueprint.route("/")
 def index():
     """Basic view."""
     return "hello world"
 
 
-@blueprint.route("/trends/search/<string:terms>/")
+@blueprint.route("/search/<string:terms>/")
 def search(terms):
     """."""
-    query = RecordsSearch(index="records-hep") \
-        .query("match", abstract=terms) \
-        .fields("earliest_date") \
-        .sort("earliest_date")[:10000]  # TODO : better
-
-    res = query.execute()
-
-    if not res.success():
-        return internal_error("query error")
-
-    logger.info("search completed in %dms" % res.took)
-    logger.info("search returned %d elements" % res.hits.total)
-    max_scores = res.hits.max_score
-
-    buckets = []
-
-    for elem in res:
-        id = elem.meta.id
-        dates = elem.earliest_date
-
-        try:
-            buckets.append({"id": id, "date": dates[0]})
-        except:
-            pass
-
-    ret = [
-        {
-            "key": terms,
-            "values": buckets
-        }
-    ]
-
-    return jsonify(ret)
+    json = request.json
+    td = TrendsDetector(TRENDS_PARAMS)
+    td.date_histogram()
+    print(json)
+    return jsonify(json)
 
 
-@blueprint.route("/trends/hist/<string:terms>/")
-def hist(terms):
-    """."""
-    s = RecordsSearch(index="records-hep")[0:0].query("match", abstract=terms)
-
-    s.aggs.bucket('weekly', 'date_histogram', field='earliest_date', interval='week', format='date_optional_time')
-
-    res = s.execute()
-
-    if not res.success():
-        return internal_error("query_error")
-
-    logger.info("search completed in %dms" % res.took)
-    logger.info("search returned %d elements" % res.hits.total)
-
-    buckets = []
-
-    for elem in res.aggregations.weekly.buckets:
-        buckets.append({"x": elem.key_as_string, "y": elem.doc_count})
-
-    ret = [
-        {
-            "key": terms,
-            "values": buckets
-        }
-    ]
-
-    return jsonify(ret)
+@blueprint.route("/emerging")
+def emerging_trends():
+    return jsonify({})
 
 
 def unauthorized(e=""):
