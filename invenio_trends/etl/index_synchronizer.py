@@ -75,8 +75,9 @@ class IndexSynchronizer:
             return default
 
         def property(field, type):
-            segments = [seg for subfield in field.split(".") for seg in ['properties', subfield]]
-            return forge(segments[1:], type).items()[0]
+            subfield = field.split(".")
+            segments = [seg for sub in subfield[1:] for seg in ['properties', sub]]
+            return subfield[0], forge(segments, type)
 
         properties = [
             property(self.date_fld, {

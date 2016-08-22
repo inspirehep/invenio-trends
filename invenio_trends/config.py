@@ -32,7 +32,7 @@ TRENDS_ENDPOINT = "api/trends"
 
 TRENDS_PARAMS = {
     'host': 'http://localhost:9200',
-    'index': 'trends-analysis',
+    'index': 'records-trends',
     'source_index': 'records-hep',
     'doc_type': 'hep',
     'analysis_field': 'abstracts.value',

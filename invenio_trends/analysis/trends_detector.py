@@ -44,10 +44,10 @@ class TrendsDetector:
         """Set up a new trends detector."""
 
         self.client = Elasticsearch(hosts=[config['host']])
-        self.index = config['analysis']['index']
-        self.date_field = config['analysis']['date_field']
-        self.analysis_field = config['analysis']['analysis_field']
-        self.doc_type = config['analysis']['doc_type']
+        self.index = config['index']
+        self.date_field = config['date_field']
+        self.analysis_field = config['analysis_field']
+        self.doc_type = config['doc_type']
 
 
     def run_pipeline(self, date, granularity, foreground_window, background_window, minimum_frequency_threshold,
@@ -58,12 +58,13 @@ class TrendsDetector:
         gran = Granularity[granularity]
         foreground_start = reference_date - foreground_window * gran.value
         background_start = reference_date - background_window * gran.value
+        smoothing_window = np.ones(smoothing_len)
 
         ids = self.interval_ids(foreground_start, reference_date)
         all_terms = self.term_vectors(ids)
         terms = self.sorting_freq_threshold(all_terms, minimum_frequency_threshold)
         hists = self.terms_histograms(terms, background_start, reference_date, gran)
-        scores = self.hist_scores(hists, foreground_start, smoothing_len)
+        scores = self.hist_scores(hists, foreground_start, smoothing_window)
         trending = self.classify_scores(scores, num_cluster)
         trends = self.prune_scores(trending, num_trends)
 
@@ -128,27 +129,32 @@ class TrendsDetector:
         hists = []
         for term, stats in terms:
             hist = self.date_histogram(start, end, gran, term=term)
-            hists.append(self.normalize_histogram(hist, hist_reference))
+            if len(hist[0]):
+                hists.append((term, stats, self.normalize_histogram(hist, hist_reference)))
         return hists
 
 
-    def hist_scores(self, hists, foreground_start, smoothing_len):
+    def hist_scores(self, hists, foreground_start, smoothing_window):
         """Apply moving average and compute z-score relative to foreground."""
-        smoothing_window = np.ones(smoothing_len)
         scores = []
-        for hist in hists:
+        for term, stats, hist in hists:
             score = self.transform_score(hist, foreground_start, smoothing_window)
-            scores.append(score)
+            scores.append((term, stats, score))
         return scores
 
 
     def classify_scores(self, scores, num_cluster):
         """Extract best trending score cluster."""
         km = KMeans(n_clusters=num_cluster)
-        pred = km.fit_predict([score for date, score in scores])
+        values_only = [score for term, stats, (date, score) in scores]
+        pred = km.fit_predict(values_only)
         clusters = km.cluster_centers_
         trending_cluster = np.argmax(np.max(np.gradient(clusters, axis=1), axis=1))
-        return scores[pred == trending_cluster]
+        selected = []
+        for i, (term, stats, hist) in enumerate(scores):
+            if pred[i] == trending_cluster:
+                selected.append((term, stats, hist))
+        return selected
 
 
     def prune_scores(self, scores, num_trends):
@@ -171,6 +177,10 @@ class TrendsDetector:
             format='date_optional_time'
         )
         hist = q.execute().aggregations.hist.buckets
+
+        if not len(hist):
+            return np.array([]), np.array([])
+
         x, y = zip(*[(parse_iso_date(elem.key_as_string), elem.doc_count) for elem in hist])
         return np.array(x), np.array(y)
 
@@ -191,18 +201,17 @@ class TrendsDetector:
         """Score using moving average and z-score w.r.t. foreground."""
         x, y = hist
 
-        window = np.ones(smoothing_window)
-        y = np.convolve(y, window, mode='valid')
+        y_s = np.convolve(y, smoothing_window, mode='valid')
 
-        invalid = len(x) - len(y)
+        invalid = len(y) - len(y_s)
         invalid_before = invalid // 2
         invalid_after = invalid_before + invalid % 2
-        x = x[invalid_before:-invalid_after]
-        assert len(x) == len(y)
+        x_s = x[invalid_before:-invalid_after] if invalid_before != 0 and invalid_after != 0 else x
+        assert len(x_s) == len(y_s)
 
-        foreground_index = np.where(x == foreground_start)[0][0]
-        x_fg = x[foreground_index - invalid_after:]
-        y_fg = y[foreground_index - invalid_after:]
+        foreground_index = np.where(x_s == foreground_start)[0][0]
+        x_fg = x_s[foreground_index - invalid_after:]
+        y_fg = y_s[foreground_index - invalid_after:]
 
-        zscore = (y_fg - np.mean(y)) / np.std(y)
+        zscore = (y_fg - np.mean(y_s)) / np.std(y_s)
         return x_fg, zscore
