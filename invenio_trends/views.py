@@ -33,7 +33,6 @@ import logging
 
 logger = logging.getLogger(__name__)
 
-
 blueprint = Blueprint(
     'invenio_trends',
     __name__,
@@ -48,17 +47,20 @@ def index():
     return "hello world"
 
 
-@blueprint.route("/search/<string:terms>/")
+#@blueprint.route("/search/<string:terms>/")
 def search(terms):
     """."""
     json = request.json
     td = TrendsDetector(TRENDS_PARAMS)
-    td.date_histogram()
+    #td.date_histogram()
+
+
+
     print(json)
     return jsonify(json)
 
 
-@blueprint.route("/emerging")
+#@blueprint.route("/emerging")
 def emerging_trends():
     return jsonify({})
 
@@ -83,3 +85,4 @@ def internal_error(e=""):
     mes = "internal error: " + e
     logger.error(mes)
     return make_response(jsonify(error=mes), 500)
+

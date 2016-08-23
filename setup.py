@@ -102,22 +102,10 @@ setup(
     include_package_data=True,
     platforms='any',
     entry_points={
-        # 'invenio_base.apps': [
-        #     'invenio_trends = invenio_trends:InvenioTrends',
-        # ],
-        # 'invenio_i18n.translations': [
-        #     'messages = invenio_trends',
-        # ],
-        # 'invenio_access.actions': [],
-        # 'invenio_admin.actions': [],
-        # 'invenio_assets.bundles': [],
-        # 'invenio_base.api_apps': [],
-        # 'invenio_base.api_blueprints': [],
-        # 'invenio_base.blueprints': [],
+        'invenio_base.api_blueprints': [
+            'invenio_trends = invenio_trends.views:blueprint'
+        ],
         # 'invenio_celery.tasks': [],
-        # 'invenio_db.models': [],
-        # 'invenio_pidstore.minters': [],
-        # 'invenio_records.jsonresolver': [],
     },
     extras_require=extras_require,
     install_requires=install_requires,

@@ -28,7 +28,7 @@ import os
 
 from invenio_trends import analysis
 
-TRENDS_ENDPOINT = "/api/trends"
+TRENDS_ENDPOINT = "/trends"
 
 TRENDS_PARAMS = {
     'host': 'http://localhost:9200',
