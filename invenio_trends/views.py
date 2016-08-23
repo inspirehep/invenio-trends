@@ -24,8 +24,8 @@
 
 """Invenio module that adds a trends api to the platform."""
 
-from config import TRENDS_ENDPOINT, TRENDS_PARAMS
-from analysis.trends_detector import TrendsDetector
+from .config import TRENDS_ENDPOINT, TRENDS_PARAMS
+from .analysis.trends_detector import TrendsDetector
 from flask import Blueprint, request, jsonify, make_response
 
 import logging
