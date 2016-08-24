@@ -22,9 +22,10 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-'''Configuration options.'''
+"""Configuration options."""
 
 import os
+from datetime import timedelta
 
 from invenio_trends import analysis
 from invenio_trends.analysis.granularity import Granularity
@@ -36,6 +37,17 @@ CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/0')
 WORD2VEC_TIMEOUT = 0.2 # seconds
 WORD2VEC_THRES = 0.7
 WORD2VEC_MAX = 5
+
+CELERYBEAT_SCHEDULE = {
+    'update-index': {
+        'task': 'invenio_trends.tasks.update_index',
+        'schedule': timedelta(hours=24)
+    },
+    'update-trends': {
+        'task': 'invenio_trends.tasks.update_trends',
+        'schedule': timedelta(hours=24)
+    },
+}
 
 TRENDS_ENDPOINT = '/trends'
 

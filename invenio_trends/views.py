@@ -22,32 +22,32 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-'''Invenio module that adds a trends api to the platform.'''
+"""Invenio module that adds a trends api to the platform."""
 
+import logging
 from datetime import datetime
 
+import requests as r
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
+from flask import Blueprint, jsonify, make_response
 from redis import StrictRedis
 
-from .utils import DatetimeConverter, print_iso_date, GranularityConverter
-
-from .config import TRENDS_ENDPOINT, TRENDS_PARAMS, WORD2VEC_TIMEOUT, WORD2VEC_THRES, WORD2VEC_MAX, \
-    MAGPIE_API_URL, SEARCH_ELASTIC_HOSTS, TRENDS_INDEX, TRENDS_DATE_FIELD, TRENDS_HIST_GRANULARITY, CACHE_REDIS_URL, \
-    TRENDS_REDIS_KEY, TRENDS_FOREGROUND_WINDOW, TRENDS_BACKGROUND_WINDOW, TRENDS_GRANULARITY
-from .analysis.trends_detector import TrendsDetector
 from .analysis.granularity import Granularity
-from flask import Blueprint, jsonify, make_response
-
-import requests as r
-import logging
-
+from .analysis.trends_detector import TrendsDetector
+from .config import CACHE_REDIS_URL, MAGPIE_API_URL, SEARCH_ELASTIC_HOSTS, \
+    TRENDS_BACKGROUND_WINDOW, TRENDS_DATE_FIELD, TRENDS_ENDPOINT, \
+    TRENDS_FOREGROUND_WINDOW, TRENDS_GRANULARITY, TRENDS_HIST_GRANULARITY, \
+    TRENDS_INDEX, TRENDS_PARAMS, TRENDS_REDIS_KEY, WORD2VEC_MAX, \
+    WORD2VEC_THRES, WORD2VEC_TIMEOUT
+from .utils import DatetimeConverter, GranularityConverter, print_iso_date
 
 logger = logging.getLogger(__name__)
 client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
 redis = StrictRedis.from_url(CACHE_REDIS_URL)
 
 def register_converters(state):
+    """Register custom path converters to be used inside route directives."""
     state.app.url_map.converters['datetime'] = DatetimeConverter
     state.app.url_map.converters['granularity'] = GranularityConverter
 
@@ -61,11 +61,13 @@ blueprint.record_once(register_converters)
 
 @blueprint.route('/granularities')
 def granularities():
-    return jsonify([gran for gran in Granularity.__members__])
+    """Return granularities choices."""
+    return jsonify(list(Granularity.__members__))
 
 
 @blueprint.route('/dates')
 def dates():
+    """Return maximum and minimum date from dataset."""
     q = Search(using=client, index=TRENDS_INDEX)[0:0]
     q.aggs.bucket('min_date', 'min', field=TRENDS_DATE_FIELD)
     q.aggs.bucket('max_date', 'max', field=TRENDS_DATE_FIELD)
@@ -78,7 +80,7 @@ def dates():
 @blueprint.route('/search/<string:query>/<string:start>/<string:end>')
 @blueprint.route('/search/<string:query>/<datetime:start>/<string:end>/<granularity:gran>')
 def search(query, start=None, end=None, gran=None, similar_words=True):
-    '''.'''
+    """Search index for given query string and return corresponding histograms with associated words."""
     if not gran:
         gran = TRENDS_HIST_GRANULARITY
 
@@ -126,6 +128,7 @@ def search(query, start=None, end=None, gran=None, similar_words=True):
 
 @blueprint.route('/emerging')
 def emerging_trends():
+    """Return cached trends for today."""
     today = datetime.today()
     start = today - TRENDS_FOREGROUND_WINDOW * TRENDS_GRANULARITY.value
     end = today - TRENDS_BACKGROUND_WINDOW * TRENDS_GRANULARITY.value
@@ -134,6 +137,7 @@ def emerging_trends():
 
 
 def word2vec(term):
+    """Fetch associates words and select them following their matching scores."""
     try:
         data = {'corpus': 'keywords', 'positive': [term.replace(' ', '')], 'negative': []}
         res = r.post(MAGPIE_API_URL + '/word2vec', json=data, timeout=WORD2VEC_TIMEOUT).json()
@@ -148,15 +152,17 @@ def word2vec(term):
 
 
 def bad_request(e=''):
-    '''Error handler for 400 error.'''
+    """Error handler for 400 error."""
     return make_response(jsonify(error='not found'), 400)
+
 
 def page_not_found(e=""):
     """Error handler for 404 error."""
     return make_response(jsonify(error="not found"), 404)
 
+
 def internal_error(e=''):
-    '''Error handler for 500 error.'''
+    """Error handler for 500 error."""
     logger.error('internal error: ' + e)
     return make_response(jsonify(error='internal error'), 500)
 

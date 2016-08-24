@@ -25,7 +25,6 @@
 """Invenio module that adds a trends api to the platform."""
 
 from .views import blueprint
-from .utils import DatetimeConverter
 
 
 class InvenioTrends(object):

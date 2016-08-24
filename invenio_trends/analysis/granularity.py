@@ -29,6 +29,8 @@ from enum import Enum
 
 
 class Granularity(Enum):
+    """Model granularity mapping between elasticsearch string value and python datetime."""
+
     second = timedelta(seconds=1)
     minute = timedelta(minutes=1)
     hour = timedelta(hours=1)

@@ -25,24 +25,26 @@
 """Tasks to be periodically scheduled."""
 
 import logging
-
-from celery import shared_task
 from datetime import datetime
 
-from invenio_trends.analysis.trends_detector import TrendsDetector
+from celery import shared_task
 from redis import StrictRedis
 
-from .config import TRENDS_PARAMS, CACHE_REDIS_URL, TRENDS_GRANULARITY, TRENDS_FOREGROUND_WINDOW, \
-    TRENDS_MINIMUM_FREQUENCY_THRESHOLD, TRENDS_BACKGROUND_WINDOW, TRENDS_NUM_CLUSTER, TRENDS_SMOOTHING_LEN, \
-    TRENDS_REDIS_KEY, TRENDS_NUM
+from invenio_trends.analysis.trends_detector import TrendsDetector
 from invenio_trends.etl.index_synchronizer import IndexSynchronizer
+
+from .config import CACHE_REDIS_URL, TRENDS_BACKGROUND_WINDOW, \
+    TRENDS_FOREGROUND_WINDOW, TRENDS_GRANULARITY, \
+    TRENDS_MINIMUM_FREQUENCY_THRESHOLD, TRENDS_NUM, TRENDS_NUM_CLUSTER, \
+    TRENDS_PARAMS, TRENDS_REDIS_KEY, TRENDS_SMOOTHING_LEN
 
 logger = logging.getLogger(__name__)
 redis = StrictRedis.from_url(CACHE_REDIS_URL)
 
+
 @shared_task(ignore_result=True)
 def update_index():
-    """Synchronize index task."""
+    """Synchronize index to refresh all new entries into the trends index."""
     logging.info('updating index')
     index_sync = IndexSynchronizer(TRENDS_PARAMS)
     index_sync.setup_index()
@@ -50,8 +52,10 @@ def update_index():
     index_sync.setup_mappings()
     index_sync.synchronize()
 
+
 @shared_task(ignore_result=True)
 def update_trends():
+    """Compute trends for the current day and cache them."""
     logging.info('updating trends')
     td = TrendsDetector(TRENDS_PARAMS)
     trends = td.run_pipeline(

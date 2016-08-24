@@ -25,8 +25,9 @@
 """Utils tests."""
 
 from datetime import datetime
-from invenio_trends.analysis.utils import parse_iso_date, safe_divide
+
 import numpy as np
+from invenio_trends.utils import parse_iso_date
 
 
 def test_parse_iso_date():
@@ -44,14 +45,3 @@ def test_parse_iso_date():
 def test_parse_iso_date_loop():
     date = datetime(2016, 4, 8, 9, 48, 23, 20000)
     assert date == parse_iso_date(date.isoformat())
-
-
-def test_safe_divide():
-    numer = [4, 4, 0, 1, np.nan, np.infty, -np.infty]
-    denom = [2, 1, 1, 0, 1, 0, 0]
-    res = [2, 4, 0, 0, 0, 0, 0]
-    assert np.array_equal(safe_divide(numer, denom), res)
-
-
-def test_safe_divide_empty():
-    assert np.array_equal(safe_divide([], []), [])

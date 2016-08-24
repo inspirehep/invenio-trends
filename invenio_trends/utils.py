@@ -23,9 +23,12 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 """Project utilities."""
-from invenio_trends.analysis.granularity import Granularity
-from werkzeug.routing import BaseConverter
+
 from datetime import datetime
+
+from werkzeug.routing import BaseConverter
+
+from invenio_trends.analysis.granularity import Granularity
 
 
 def print_iso_date(obj):
@@ -47,16 +50,20 @@ class DatetimeConverter(BaseConverter):
     """Datetime/url converter."""
 
     def to_python(self, value):
+        """Convert string to datetime."""
         return parse_iso_date(value)
 
     def to_url(self, value):
+        """Convert datetime to string."""
         return BaseConverter.to_url(self, str(value))
 
 class GranularityConverter(BaseConverter):
     """Datetime/url converter."""
 
     def to_python(self, value):
+        """Convert string to granularity."""
         return Granularity[value]
 
     def to_url(self, value):
+        """Convert granularity to datetime."""
         return str(value)

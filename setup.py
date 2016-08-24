@@ -105,7 +105,9 @@ setup(
         'invenio_base.api_blueprints': [
             'invenio_trends = invenio_trends.views:blueprint'
         ],
-        # 'invenio_celery.tasks': [],
+        'invenio_celery.tasks': [
+            'invenio_trends = invenio_trends.tasks'
+        ],
     },
     extras_require=extras_require,
     install_requires=install_requires,

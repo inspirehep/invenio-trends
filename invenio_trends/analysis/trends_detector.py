@@ -30,7 +30,6 @@ from elasticsearch import Elasticsearch
 from invenio_trends.config import SEARCH_ELASTIC_HOSTS
 from sklearn.cluster import KMeans
 
-from invenio_trends.analysis.granularity import Granularity
 from invenio_trends.utils import parse_iso_date
 from elasticsearch_dsl import Search
 import numpy as np
@@ -43,7 +42,6 @@ class TrendsDetector:
 
     def __init__(self, config):
         """Set up a new trends detector."""
-
         self.client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
         self.index = config['index']
         self.date_field = config['date_field']
@@ -54,7 +52,6 @@ class TrendsDetector:
     def run_pipeline(self, reference_date, granularity, foreground_window, background_window, minimum_frequency_threshold,
                      smoothing_len, num_cluster, num_trends):
         """Run pipeline to find trends given parameters."""
-
         foreground_start = reference_date - foreground_window * granularity.value
         background_start = reference_date - background_window * granularity.value
         smoothing_window = np.ones(smoothing_len)
@@ -163,7 +160,7 @@ class TrendsDetector:
 
 
     def date_histogram(self, start, end, granularity, term=None):
-        """Retrieve the date histogram of all entries or a single term is given"""
+        """Retrieve the date histogram of all entries or a single term is given."""
         q = Search(using=self.client, index=self.index)[0:0] \
             .filter('range', **{self.date_field: {'gt': start, 'lte': end}})
         if term != None:
