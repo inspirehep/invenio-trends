@@ -44,9 +44,5 @@ from flask_babelex import Babel
 logging.basicConfig(level=logging.DEBUG if os.getenv('DEBUG') == 1 else logging.INFO)
 
 app = Flask(__name__)
-
-from invenio_trends.utils import DatetimeConverter
-app.url_map.converters['datetime'] = DatetimeConverter
-
 CORS(app)
 Babel(app)

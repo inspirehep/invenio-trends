@@ -34,4 +34,4 @@ class DatetimeConverter(BaseConverter):
         return parse_iso_date(value)
 
     def to_url(self, value):
-        return str(value)
+        return BaseConverter.to_url(str(value))

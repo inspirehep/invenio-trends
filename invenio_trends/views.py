@@ -25,21 +25,29 @@
 """Invenio module that adds a trends api to the platform."""
 
 from datetime import datetime
+
+from invenio_trends.utils import DatetimeConverter
+
 from .config import TRENDS_ENDPOINT, TRENDS_PARAMS
 from .analysis.trends_detector import TrendsDetector
 from .analysis.granularity import Granularity
-from flask import Blueprint, request, jsonify, make_response
+from flask import Blueprint, jsonify, make_response
 
 import logging
 
 
 logger = logging.getLogger(__name__)
 
+def register_converter(state):
+    state.app.url_map.converters['datetime'] = DatetimeConverter
+
 blueprint = Blueprint(
     'invenio_trends',
     __name__,
-    url_prefix=TRENDS_ENDPOINT
+    url_prefix=TRENDS_ENDPOINT,
 )
+blueprint.record_once(register_converter)
+
 
 ret = {
     'stats': {
@@ -130,6 +138,9 @@ def search(query, start=None, end=None, gran=None):
     gran = Granularity[gran]
 
     terms = [t.strip() for t in query.split(',') if len(t.strip())]
+    if not len(terms):
+        return bad_request("no terms")
+
     td = TrendsDetector(TRENDS_PARAMS)
 
     print(terms)
@@ -137,7 +148,8 @@ def search(query, start=None, end=None, gran=None):
     maxValue = 0
     minDate = 0#datetime.now
     for term in terms:
-        td.date_histogram(start, end, gran, term)
+        # td.date_histogram(start, end, gran, term)
+        pass
 
 
 
@@ -150,14 +162,13 @@ def emerging_trends():
     return jsonify(ret)
 
 
-def page_not_found(e=""):
-    """Error handler to show a 404.html page in case of a 404 error."""
-    return make_response(jsonify(error="not found"), 404)
+def bad_request(e=""):
+    """Error handler for 400 error."""
+    return make_response(jsonify(error="not found"), 400)
 
 
 def internal_error(e=""):
-    """Error handler to show a 500.html page in case of a 500 error."""
-    mes = "internal error: " + e
-    logger.error(mes)
-    return make_response(jsonify(error=mes), 500)
+    """Error handler for 500 error."""
+    logger.error("internal error: " + e)
+    return make_response(jsonify(error="internal error"), 500)
 
