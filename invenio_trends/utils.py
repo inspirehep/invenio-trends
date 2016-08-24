@@ -22,31 +22,16 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
+"""Flask utilities."""
 
-"""Minimal Flask application example for development.
+from werkzeug.routing import BaseConverter
+from .analysis.utils import parse_iso_date
 
-Run example development server:
+class DatetimeConverter(BaseConverter):
+    """Datetime/url converter."""
 
-.. code-block:: console
+    def to_python(self, value):
+        return parse_iso_date(value)
 
-   $ export FLASK_APP=invenio_trends/app.py
-   $ export DEBUG=1
-   $ flask run
-"""
-
-import logging
-import os
-
-from flask import Flask
-from flask.ext.cors import CORS
-from flask_babelex import Babel
-
-logging.basicConfig(level=logging.DEBUG if os.getenv('DEBUG') == 1 else logging.INFO)
-
-app = Flask(__name__)
-
-from invenio_trends.utils import DatetimeConverter
-app.url_map.converters['datetime'] = DatetimeConverter
-
-CORS(app)
-Babel(app)
+    def to_url(self, value):
+        return str(value)

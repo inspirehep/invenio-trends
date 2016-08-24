@@ -24,8 +24,10 @@
 
 """Invenio module that adds a trends api to the platform."""
 
+from datetime import datetime
 from .config import TRENDS_ENDPOINT, TRENDS_PARAMS
 from .analysis.trends_detector import TrendsDetector
+from .analysis.granularity import Granularity
 from flask import Blueprint, request, jsonify, make_response
 
 import logging
@@ -39,40 +41,113 @@ blueprint = Blueprint(
     url_prefix=TRENDS_ENDPOINT
 )
 
+ret = {
+    'stats': {
+        'minValue': 0,
+        'maxValue': 67,
+        'minDate': '2014-03-01',
+        'maxDate': '2014-12-06'
+    },
+    'related_terms': {
+        'Quantum chromodynamics': ["QCD"],
+        'plasma physics': [],
+        'lasers': []
+    },
+    'data': [{
+        'name': 'Quantum xs',
+        'series': [
+            {'date': '2014-03-01', 'value': 0},
+            {'date': '2014-04-01', 'value': 0},
+            {'date': '2014-05-01', 'value': 2},
+            {'date': '2014-06-01', 'value': 5},
+            {'date': '2014-07-01', 'value': 11},
+            {'date': '2014-08-01', 'value': 11},
+            {'date': '2014-09-01', 'value': 27},
+            {'date': '2014-10-01', 'value': 27},
+            {'date': '2014-11-01', 'value': 47},
+            {'date': '2014-12-01', 'value': 57}
+        ]
+    }, {
+        'name': 'plasma physics',
+        'series': [
+            {'date': '2014-03-01', 'value': 0},
+            {'date': '2014-04-01', 'value': 0},
+            {'date': '2014-05-01', 'value': 2},
+            {'date': '2014-06-01', 'value': 5},
+            {'date': '2014-07-01', 'value': 1},
+            {'date': '2014-08-01', 'value': 7},
+            {'date': '2014-09-01', 'value': 17},
+            {'date': '2014-10-01', 'value': 27},
+            {'date': '2014-11-01', 'value': 47},
+            {'date': '2014-12-01', 'value': 49}
+        ]
+    },
+        {
+            'name': 'lasers',
+            'series': [
+                {'date': '2014-03-01', 'value': 0},
+                {'date': '2014-04-02', 'value': 1},
+                {'date': '2014-05-05', 'value': 1},
+                {'date': '2014-06-27', 'value': 0},
+                {'date': '2014-07-06', 'value': 0},
+                {'date': '2014-08-06', 'value': 0},
+                {'date': '2014-09-06', 'value': 3},
+                {'date': '2014-10-06', 'value': 5},
+                {'date': '2014-11-06', 'value': 9},
+                {'date': '2014-12-06', 'value': 19}
+            ]
+        },
+        {
+            'name': 'QCD',
+            'series': [
+                {'date': '2014-03-01', 'value': 0},
+                {'date': '2014-04-06', 'value': 0},
+                {'date': '2014-05-06', 'value': 2},
+                {'date': '2014-06-06', 'value': 5},
+                {'date': '2014-07-06', 'value': 11},
+                {'date': '2014-08-06', 'value': 7},
+                {'date': '2014-09-06', 'value': 17},
+                {'date': '2014-10-06', 'value': 17},
+                {'date': '2014-11-06', 'value': 47},
+                {'date': '2014-12-06', 'value': 37}
+            ]
+        }]
+}
 
-# @blueprint.route("/<int:recid>/") recid
-@blueprint.route("/")
-def index():
-    """Basic view."""
-    return "hello world"
 
-
-#@blueprint.route("/search/<string:terms>/")
-def search(terms):
+@blueprint.route("/search/<string:query>/")
+@blueprint.route("/search/<string:query>/<string:start>")
+@blueprint.route("/search/<string:query>/<string:start>/<string:end>")
+@blueprint.route("/search/<string:query>/<datetime:start>/<string:end>/<string:gran>")
+def search(query, start=None, end=None, gran=None):
     """."""
-    json = request.json
+    if not start:
+        start = ''
+    if not end:
+        end = ''
+    if gran not in Granularity.__members__:
+        gran = 'day'
+    gran = Granularity[gran]
+
+    terms = [t.strip() for t in query.split(',') if len(t.strip())]
     td = TrendsDetector(TRENDS_PARAMS)
-    #td.date_histogram()
+
+    print(terms)
+    minValue = 0
+    maxValue = 0
+    minDate = 0#datetime.now
+    for term in terms:
+        td.date_histogram(start, end, gran, term)
 
 
 
-    print(json)
-    return jsonify(json)
+    print(ret)
+    return jsonify(ret)
 
 
-#@blueprint.route("/emerging")
+@blueprint.route("/emerging")
 def emerging_trends():
-    return jsonify({})
-
-
-def unauthorized(e=""):
-    """Error handler to show a 401.html page in case of a 401 error."""
-    return make_response(jsonify(error="unauthorized"), 401)
-
-
-def insufficient_permissions(e=""):
-    """Error handler to show a 403.html page in case of a 403 error."""
-    return make_response(jsonify(error="insufficient_permissions"), 403)
+    return jsonify(ret)
 
 
 def page_not_found(e=""):
