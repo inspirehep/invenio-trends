@@ -22,33 +22,49 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Configuration options."""
+'''Configuration options.'''
 
 import os
 
 from invenio_trends import analysis
 
-TRENDS_ENDPOINT = "/trends"
+SEARCH_ELASTIC_HOSTS = os.environ.get('SEARCH_ELASTIC_HOSTS', 'localhost').split(';')
+MAGPIE_API_URL = 'http://magpie.inspirehep.net/api'
+CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/0')
 
-TRENDS_PARAMS = {
-    'host': 'http://localhost:9200',
-    'index': 'records-trends',
-    'source_index': 'records-hep',
-    'doc_type': 'hep',
-    'analysis_field': 'abstracts.value',
-    'date_field': 'earliest_date',
-    'id_field': 'self_recid',
-    'tokenizer': 'icu_tokenizer',
-    'minimum_date': '2013-02-01',
-    'maximum_date': None,
-    'filter_script': "d = doc['earliest_date'].date; d.getDayOfYear() != 1",
-    'unigram': True,
-    'minimum_ngram': 2,
-    'maximum_ngram': 3,
-    'stopwords_file': os.path.dirname(analysis.__file__) + '/stopwords.txt',
-}
-
-WORD2VEC_URL = 'http://magpie.inspirehep.net/api/word2vec'
 WORD2VEC_TIMEOUT = 0.2 # seconds
 WORD2VEC_THRES = 0.7
 WORD2VEC_MAX = 5
+
+TRENDS_INDEX = 'records-trends'
+TRENDS_SOURCE_INDEX = 'records-hep'
+TRENDS_DOC_TYPE = 'hep'
+TRENDS_ANALYSIS_FIELD = 'abstracts.value'
+TRENDS_DATE_FIELD = 'earliest_date'
+TRENDS_ID_FIELD = 'self_recid'
+TRENDS_TOKENIZER = 'icu_tokenizer'
+TRENDS_MINIMUM_DATE = '2013-02-01'
+TRENDS_MAXIMUM_DATE = None
+TRENDS_FILTER_SCRIPT = "d = doc['earliest_date'].date; d.getDayOfYear() != 1"
+TRENDS_UNIGRAM = True
+TRENDS_MINIMUM_NGRAM = 2
+TRENDS_MAXIMUM_NGM = 3
+TRENDS_STOPWORDS_FILE = os.path.dirname(analysis.__file__) + '/stopwords.txt'
+
+TRENDS_PARAMS = {
+    'index': TRENDS_INDEX,
+    'source_index': TRENDS_SOURCE_INDEX,
+    'doc_type': TRENDS_DOC_TYPE,
+    'analysis_field': TRENDS_ANALYSIS_FIELD,
+    'date_field': TRENDS_DATE_FIELD,
+    'id_field': TRENDS_ID_FIELD,
+    'tokenizer': TRENDS_TOKENIZER,
+    'minimum_date': TRENDS_MINIMUM_DATE,
+    'maximum_date': TRENDS_MAXIMUM_DATE,
+    'filter_script': TRENDS_FILTER_SCRIPT,
+    'unigram': TRENDS_UNIGRAM,
+    'minimum_ngram': TRENDS_MINIMUM_NGRAM,
+    'maximum_ngram': TRENDS_MAXIMUM_NGM,
+    'stopwords_file': TRENDS_STOPWORDS_FILE,
+}
+

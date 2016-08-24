@@ -41,7 +41,6 @@ id_field = 'id'
 stopwords_file = '../invenio_trends/etl/stopwords.txt'
 
 PARAMS = {
-    'host': host,
     'index': index,
     'source_index': src_index,
     'doc_type': doc_type,

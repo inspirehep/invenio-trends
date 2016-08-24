@@ -30,7 +30,8 @@ from elasticsearch_dsl import Search
 
 from .utils import DatetimeConverter, print_iso_date
 
-from .config import TRENDS_ENDPOINT, TRENDS_PARAMS, WORD2VEC_TIMEOUT, WORD2VEC_URL, WORD2VEC_THRES, WORD2VEC_MAX
+from .config import TRENDS_ENDPOINT, TRENDS_PARAMS, WORD2VEC_TIMEOUT, WORD2VEC_URL, WORD2VEC_THRES, WORD2VEC_MAX, \
+    MAGPIE_API_URL
 from .analysis.trends_detector import TrendsDetector
 from .analysis.granularity import Granularity
 from flask import Blueprint, jsonify, make_response
@@ -126,7 +127,7 @@ def min_data_date():
 def word2vec(term):
     try:
         data = {'corpus': 'keywords', 'positive': [term.replace(' ', '')], 'negative': []}
-        res = r.post(WORD2VEC_URL, json=data, timeout=WORD2VEC_TIMEOUT).json()
+        res = r.post(MAGPIE_API_URL + '/word2vec', json=data, timeout=WORD2VEC_TIMEOUT).json()
         similarities = []
         for word, score in sorted(res['vector'], key=lambda e: -e[1])[:WORD2VEC_MAX]:
             if score >= WORD2VEC_THRES and term not in word:

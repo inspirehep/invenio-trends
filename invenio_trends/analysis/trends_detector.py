@@ -27,6 +27,7 @@
 import logging
 
 from elasticsearch import Elasticsearch
+from invenio_trends.config import SEARCH_ELASTIC_HOSTS
 from sklearn.cluster import KMeans
 
 from invenio_trends.analysis.granularity import Granularity
@@ -43,7 +44,7 @@ class TrendsDetector:
     def __init__(self, config):
         """Set up a new trends detector."""
 
-        self.client = Elasticsearch(hosts=[config['host']])
+        self.client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
         self.index = config['index']
         self.date_field = config['date_field']
         self.analysis_field = config['analysis_field']

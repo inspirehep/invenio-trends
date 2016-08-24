@@ -213,7 +213,7 @@ class IndexSynchronizer:
                             "asciifolding",
                             "lowercase",
                             "trends_word_delimiter",
-                            "trends_number_removal",
+                            # "trends_number_removal",
                             "trends_latex_removal",
                             "trends_stopwords",
                             "trends_stemmer",
