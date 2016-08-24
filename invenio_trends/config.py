@@ -27,6 +27,7 @@
 import os
 
 from invenio_trends import analysis
+from invenio_trends.analysis.granularity import Granularity
 
 SEARCH_ELASTIC_HOSTS = os.environ.get('SEARCH_ELASTIC_HOSTS', 'localhost').split(';')
 MAGPIE_API_URL = 'http://magpie.inspirehep.net/api'
@@ -35,6 +36,8 @@ CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/0')
 WORD2VEC_TIMEOUT = 0.2 # seconds
 WORD2VEC_THRES = 0.7
 WORD2VEC_MAX = 5
+
+TRENDS_ENDPOINT = '/trends'
 
 TRENDS_INDEX = 'records-trends'
 TRENDS_SOURCE_INDEX = 'records-hep'
@@ -50,6 +53,17 @@ TRENDS_UNIGRAM = True
 TRENDS_MINIMUM_NGRAM = 2
 TRENDS_MAXIMUM_NGM = 3
 TRENDS_STOPWORDS_FILE = os.path.dirname(analysis.__file__) + '/stopwords.txt'
+
+TRENDS_HIST_GRANULARITY = Granularity.week
+TRENDS_GRANULARITY = Granularity.day
+TRENDS_REDIS_KEY = 'invenio:trends'
+
+TRENDS_FOREGROUND_WINDOW=90,
+TRENDS_BACKGROUND_WINDOW=365,
+TRENDS_MINIMUM_FREQUENCY_THRESHOLD=5,
+TRENDS_SMOOTHING_LEN=7,
+TRENDS_NUM_CLUSTER=3,
+TRENDS_NUM=8
 
 TRENDS_PARAMS = {
     'index': TRENDS_INDEX,

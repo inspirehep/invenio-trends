@@ -27,19 +27,42 @@
 import logging
 
 from celery import shared_task
+from datetime import datetime
 
-from .config import TRENDS_PARAMS
-from invenio_trends.index_synchronizer import IndexSynchronizer
+from invenio_trends.analysis.trends_detector import TrendsDetector
+from redis import StrictRedis
+
+from .config import TRENDS_PARAMS, CACHE_REDIS_URL, TRENDS_GRANULARITY, TRENDS_FOREGROUND_WINDOW, \
+    TRENDS_MINIMUM_FREQUENCY_THRESHOLD, TRENDS_BACKGROUND_WINDOW, TRENDS_NUM_CLUSTER, TRENDS_SMOOTHING_LEN, \
+    TRENDS_REDIS_KEY, TRENDS_NUM
+from invenio_trends.etl.index_synchronizer import IndexSynchronizer
 
 logger = logging.getLogger(__name__)
-
+redis = StrictRedis.from_url(CACHE_REDIS_URL)
 
 @shared_task(ignore_result=True)
-def index_synchronizer():
+def update_index():
     """Synchronize index task."""
-    logging.info('running index_synchronizer task')
+    logging.info('updating index')
     index_sync = IndexSynchronizer(TRENDS_PARAMS)
     index_sync.setup_index()
     index_sync.setup_analyzer()
     index_sync.setup_mappings()
     index_sync.synchronize()
+
+@shared_task(ignore_result=True)
+def update_trends():
+    logging.info('updating trends')
+    td = TrendsDetector(TRENDS_PARAMS)
+    trends = td.run_pipeline(
+        reference_date=datetime.now(),
+        granularity=TRENDS_GRANULARITY,
+        foreground_window=TRENDS_FOREGROUND_WINDOW,
+        background_window=TRENDS_BACKGROUND_WINDOW,
+        minimum_frequency_threshold=TRENDS_MINIMUM_FREQUENCY_THRESHOLD,
+        smoothing_len=TRENDS_SMOOTHING_LEN,
+        num_cluster=TRENDS_NUM_CLUSTER,
+        num_trends=TRENDS_NUM
+    )
+    terms = [term for term, stats, (date, score) in trends]
+    assert(1, redis.hset(TRENDS_REDIS_KEY, datetime.today(), ','.join(terms)))

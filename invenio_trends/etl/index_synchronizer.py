@@ -30,6 +30,7 @@ import invenio_trends
 import requests as r
 
 from invenio_trends import analysis
+from invenio_trends.config import SEARCH_ELASTIC_HOSTS
 
 logger = logging.getLogger(__name__)
 
@@ -39,7 +40,7 @@ class IndexSynchronizer:
 
     def __init__(self, config):
         """Unwrapping configuration defined in config.py."""
-        self.host = config['host']
+        self.host = SEARCH_ELASTIC_HOSTS[0]
 
         self.index = config['index']
         self.src_index = config['source_index']

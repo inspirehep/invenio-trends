@@ -22,16 +22,19 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Invenio module that adds a trends api to the platform."""
+'''Invenio module that adds a trends api to the platform.'''
 
 from datetime import datetime
 
+from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
+from redis import StrictRedis
 
-from .utils import DatetimeConverter, print_iso_date
+from .utils import DatetimeConverter, print_iso_date, GranularityConverter
 
-from .config import TRENDS_ENDPOINT, TRENDS_PARAMS, WORD2VEC_TIMEOUT, WORD2VEC_URL, WORD2VEC_THRES, WORD2VEC_MAX, \
-    MAGPIE_API_URL
+from .config import TRENDS_ENDPOINT, TRENDS_PARAMS, WORD2VEC_TIMEOUT, WORD2VEC_THRES, WORD2VEC_MAX, \
+    MAGPIE_API_URL, SEARCH_ELASTIC_HOSTS, TRENDS_INDEX, TRENDS_DATE_FIELD, TRENDS_HIST_GRANULARITY, CACHE_REDIS_URL, \
+    TRENDS_REDIS_KEY, TRENDS_FOREGROUND_WINDOW, TRENDS_BACKGROUND_WINDOW, TRENDS_GRANULARITY
 from .analysis.trends_detector import TrendsDetector
 from .analysis.granularity import Granularity
 from flask import Blueprint, jsonify, make_response
@@ -41,9 +44,12 @@ import logging
 
 
 logger = logging.getLogger(__name__)
+client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
+redis = StrictRedis.from_url(CACHE_REDIS_URL)
 
 def register_converters(state):
     state.app.url_map.converters['datetime'] = DatetimeConverter
+    state.app.url_map.converters['granularity'] = GranularityConverter
 
 blueprint = Blueprint(
     'invenio_trends',
@@ -53,23 +59,32 @@ blueprint = Blueprint(
 blueprint.record_once(register_converters)
 
 
-@blueprint.route("/granularities")
+@blueprint.route('/granularities')
 def granularities():
     return jsonify([gran for gran in Granularity.__members__])
 
-@blueprint.route("/search/<string:query>/")
-@blueprint.route("/search/<string:query>/<string:start>")
-@blueprint.route("/search/<string:query>/<string:start>/<string:end>")
-@blueprint.route("/search/<string:query>/<datetime:start>/<string:end>/<string:gran>")
-def search(query, start=None, end=None, gran=None):
-    """."""
-    if gran not in Granularity.__members__:
-        gran = 'week'
-    gran = Granularity[gran]
+
+@blueprint.route('/dates')
+def dates():
+    q = Search(using=client, index=TRENDS_INDEX)[0:0]
+    q.aggs.bucket('min_date', 'min', field=TRENDS_DATE_FIELD)
+    q.aggs.bucket('max_date', 'max', field=TRENDS_DATE_FIELD)
+    res = q.execute().aggregations
+    return jsonify({'maximum': res.min_date.value_as_string, 'minimum': res.max_date.value_as_string})
+
+
+@blueprint.route('/search/<string:query>/')
+@blueprint.route('/search/<string:query>/<string:start>')
+@blueprint.route('/search/<string:query>/<string:start>/<string:end>')
+@blueprint.route('/search/<string:query>/<datetime:start>/<string:end>/<granularity:gran>')
+def search(query, start=None, end=None, gran=None, similar_words=True):
+    '''.'''
+    if not gran:
+        gran = TRENDS_HIST_GRANULARITY
 
     terms = [t.strip() for t in query.split(',') if len(t.strip())]
     if not len(terms):
-        return bad_request("no terms")
+        return bad_request('no terms')
 
     td = TrendsDetector(TRENDS_PARAMS)
     minValue = 0
@@ -80,7 +95,7 @@ def search(query, start=None, end=None, gran=None):
     all_terms = []
     related_terms = {}
     for term in terms:
-        similarities = word2vec(term)
+        similarities = word2vec(term) if similar_words else []
         related_terms[term] = similarities
         all_terms.append(term)
         all_terms.extend(similarities)
@@ -106,45 +121,42 @@ def search(query, start=None, end=None, gran=None):
         'related_terms': related_terms,
         'data': data
     }
-
     return jsonify(ret)
 
 
-@blueprint.route("/emerging")
+@blueprint.route('/emerging')
 def emerging_trends():
+    today = datetime.today()
+    start = today - TRENDS_FOREGROUND_WINDOW * TRENDS_GRANULARITY.value
+    end = today - TRENDS_BACKGROUND_WINDOW * TRENDS_GRANULARITY.value
+    today_terms = redis.hget(TRENDS_REDIS_KEY, today)
+    return search(today_terms, start, end, False)
 
-
-    return jsonify({})
-
-
-def min_data_date():
-    q = Search(using=self.client, index=self.index) \
-        .fields(['']) \
-        .filter('exists', field=self.analysis_field) \
-        .filter('range', **{self.date_field: {'gt': start, 'lte': end}})
-    return [elem.meta.id for elem in q.scan()]
 
 def word2vec(term):
     try:
         data = {'corpus': 'keywords', 'positive': [term.replace(' ', '')], 'negative': []}
         res = r.post(MAGPIE_API_URL + '/word2vec', json=data, timeout=WORD2VEC_TIMEOUT).json()
         similarities = []
-        for word, score in sorted(res['vector'], key=lambda e: -e[1])[:WORD2VEC_MAX]:
+        for word, score in sorted(res['vector'], key=lambda e: -e[1]):
             if score >= WORD2VEC_THRES and term not in word:
                 similarities.append(word.replace('-', ' '))
-        return similarities
+        return similarities[:WORD2VEC_MAX]
     except Exception as e:
         logger.error(e)
         return []
 
 
-def bad_request(e=""):
-    """Error handler for 400 error."""
-    return make_response(jsonify(error="not found"), 400)
+def bad_request(e=''):
+    '''Error handler for 400 error.'''
+    return make_response(jsonify(error='not found'), 400)
 
+def page_not_found(e=""):
+    """Error handler for 404 error."""
+    return make_response(jsonify(error="not found"), 404)
 
-def internal_error(e=""):
-    """Error handler for 500 error."""
-    logger.error("internal error: " + e)
-    return make_response(jsonify(error="internal error"), 500)
+def internal_error(e=''):
+    '''Error handler for 500 error.'''
+    logger.error('internal error: ' + e)
+    return make_response(jsonify(error='internal error'), 500)
 

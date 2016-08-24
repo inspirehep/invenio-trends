@@ -51,20 +51,18 @@ class TrendsDetector:
         self.doc_type = config['doc_type']
 
 
-    def run_pipeline(self, date, granularity, foreground_window, background_window, minimum_frequency_threshold,
+    def run_pipeline(self, reference_date, granularity, foreground_window, background_window, minimum_frequency_threshold,
                      smoothing_len, num_cluster, num_trends):
         """Run pipeline to find trends given parameters."""
 
-        reference_date = parse_iso_date(date)
-        gran = Granularity[granularity]
-        foreground_start = reference_date - foreground_window * gran.value
-        background_start = reference_date - background_window * gran.value
+        foreground_start = reference_date - foreground_window * granularity.value
+        background_start = reference_date - background_window * granularity.value
         smoothing_window = np.ones(smoothing_len)
 
         ids = self.interval_ids(foreground_start, reference_date)
         all_terms = self.term_vectors(ids)
         terms = self.sorting_freq_threshold(all_terms, minimum_frequency_threshold)
-        hists = self.terms_histograms(terms, background_start, reference_date, gran)
+        hists = self.terms_histograms(terms, background_start, reference_date, granularity)
         scores = self.hist_scores(hists, foreground_start, smoothing_window)
         trending = self.classify_scores(scores, num_cluster)
         trends = self.prune_scores(trending, num_trends)
