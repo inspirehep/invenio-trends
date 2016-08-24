@@ -68,5 +68,11 @@ def update_trends():
         num_cluster=TRENDS_NUM_CLUSTER,
         num_trends=TRENDS_NUM
     )
-    terms = [term for term, stats, (date, score) in trends]
-    assert(1, redis.hset(TRENDS_REDIS_KEY, datetime.today(), ','.join(terms)))
+    terms, dates = zip(*[(term, date) for term, stats, (date, score) in trends])
+    mapping = {
+        'terms': terms,
+        'start': min(dates),
+        'end': max(dates),
+        'granularity': TRENDS_GRANULARITY
+    }
+    assert(1, redis.hmset(TRENDS_REDIS_KEY, mapping))

@@ -40,7 +40,7 @@ from .config import CACHE_REDIS_URL, MAGPIE_API_URL, SEARCH_ELASTIC_HOSTS, \
     TRENDS_FOREGROUND_WINDOW, TRENDS_GRANULARITY, TRENDS_HIST_GRANULARITY, \
     TRENDS_INDEX, TRENDS_PARAMS, TRENDS_REDIS_KEY, WORD2VEC_MAX, \
     WORD2VEC_THRES, WORD2VEC_TIMEOUT
-from .utils import DatetimeConverter, GranularityConverter, print_iso_date
+from .utils import DatetimeConverter, GranularityConverter, return_iso_date
 
 logger = logging.getLogger(__name__)
 client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
@@ -111,15 +111,15 @@ def search(query, start=None, end=None, gran=None, similar_words=True):
             maxValue = max(maxValue, max(values))
             minDate = min(minDate, min(dates))
             maxDate = max(maxDate, max(dates))
-        series = [{'date': print_iso_date(date), 'value': value} for date, value in zip(dates, values)]
+        series = [{'date': return_iso_date(date), 'value': value} for date, value in zip(dates, values)]
         data.append({'name': term, 'series': series})
 
     ret = {
         'stats': {
             'minValue': minValue,
             'maxValue': maxValue,
-            'minDate': print_iso_date(minDate),
-            'maxDate': print_iso_date(maxDate)
+            'minDate': return_iso_date(minDate),
+            'maxDate': return_iso_date(maxDate)
         },
         'related_terms': related_terms,
         'data': data
@@ -129,12 +129,13 @@ def search(query, start=None, end=None, gran=None, similar_words=True):
 
 @blueprint.route('/emerging')
 def emerging_trends():
-    """Return cached trends for today."""
-    today = datetime.today()
-    start = today - TRENDS_FOREGROUND_WINDOW * TRENDS_GRANULARITY.value
-    end = today - TRENDS_BACKGROUND_WINDOW * TRENDS_GRANULARITY.value
-    today_terms = redis.hget(TRENDS_REDIS_KEY, today)
-    return search(today_terms, start, end, False)
+    """Return cached latest trends."""
+    cached = redis.hmget(TRENDS_REDIS_KEY, 'terms', 'start', 'end', 'granularity')
+    if not len(cached):
+        return jsonify({})
+
+    terms, start, end, gran = cached
+    return search(terms, start, end, gran, False)
 
 
 def word2vec(term):

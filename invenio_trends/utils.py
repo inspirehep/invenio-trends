@@ -31,10 +31,10 @@ from werkzeug.routing import BaseConverter
 from invenio_trends.analysis.granularity import Granularity
 
 
-def print_iso_date(obj):
+def return_iso_date(obj):
     """Print given date to ISO8601 without timezone."""
     if isinstance(obj, list):
-        return [print_iso_date(e) for e in obj]
+        return [return_iso_date(e) for e in obj]
     return obj.isoformat()
 
 
