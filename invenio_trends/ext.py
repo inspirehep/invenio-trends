@@ -33,9 +33,7 @@ class InvenioTrends(object):
     def __init__(self, app=None):
         """Extension initialization."""
         if app:
-
             self.init_app(app)
-
 
     def init_app(self, app):
         """Flask application initialization."""
@@ -43,7 +41,5 @@ class InvenioTrends(object):
         app.register_blueprint(blueprint)
         app.extensions['invenio-trends'] = self
 
-
     def init_config(self, app):
         """Initialize configuration."""
-

@@ -52,8 +52,6 @@ extras_require = {
         'ipython',
         'honcho',
         'gunicorn',
-        'gunicorn',
-        'scipy',
         'pylab',
         'wordcloud'
     ],

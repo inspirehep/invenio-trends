@@ -29,16 +29,17 @@ from time import sleep
 import requests as r
 from pytest import yield_fixture
 
+from invenio_trends.config import SEARCH_ELASTIC_HOSTS, TRENDS_STOPWORDS_FILE
 from invenio_trends.etl.index_synchronizer import IndexSynchronizer
 
-host = 'http://localhost:9200'
+host = 'http://' + SEARCH_ELASTIC_HOSTS[0]
 src_index = 'invenio-trends-test-source'
 index = 'invenio-trends-test-destination'
 doc_type = 'trends'
 analysis_field = 'analysis'
 date_field = 'date'
 id_field = 'id'
-stopwords_file = '../invenio_trends/etl/stopwords.txt'
+stopwords_file = TRENDS_STOPWORDS_FILE
 
 PARAMS = {
     'index': index,
@@ -82,7 +83,7 @@ def run_around_tests():
     for id, entry in enumerate([entry_correct, entry_early, entry_late, entry_script]):
         r.post(host + '/' + src_index + '/' + doc_type + '/' + str(id), json=entry).json()
 
-    sleep(1)
+    sleep(2)
     yield
     r.delete(host + '/' + src_index)
     r.delete(host + '/' + index)
@@ -123,7 +124,7 @@ def test_setup_mapping():
 
 def test_synchronize():
     index_sync.synchronize()
-    sleep(1)
+    sleep(2)
 
     entries = r.post(host + '/' + index + '/_search', json={'query': {'match_all': {}}}).json()
     hits = entries['hits']['hits']

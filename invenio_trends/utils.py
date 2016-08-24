@@ -57,6 +57,7 @@ class DatetimeConverter(BaseConverter):
         """Convert datetime to string."""
         return BaseConverter.to_url(self, str(value))
 
+
 class GranularityConverter(BaseConverter):
     """Datetime/url converter."""
 

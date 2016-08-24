@@ -46,6 +46,7 @@ logger = logging.getLogger(__name__)
 client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
 redis = StrictRedis.from_url(CACHE_REDIS_URL)
 
+
 def register_converters(state):
     """Register custom path converters to be used inside route directives."""
     state.app.url_map.converters['datetime'] = DatetimeConverter
@@ -165,4 +166,3 @@ def internal_error(e=''):
     """Error handler for 500 error."""
     logger.error('internal error: ' + e)
     return make_response(jsonify(error='internal error'), 500)
-

@@ -40,7 +40,7 @@ class IndexSynchronizer:
 
     def __init__(self, config):
         """Unwrapping configuration defined in config.py."""
-        self.host = SEARCH_ELASTIC_HOSTS[0]
+        self.host = 'http://' + SEARCH_ELASTIC_HOSTS[0]
 
         self.index = config['index']
         self.src_index = config['source_index']
@@ -59,11 +59,9 @@ class IndexSynchronizer:
         self.max_ngram = config['maximum_ngram']
         self.stopwords_file = config['stopwords_file']
 
-
     def setup_index(self):
         """Create analysis index if it does not exist yet."""
         r.post(self.host + '/' + self.index)  # might already exist
-
 
     def setup_mappings(self):
         """Create mappings for analyzed field and date field (short index downtime)."""
@@ -96,11 +94,10 @@ class IndexSynchronizer:
         }
 
         res = r.put(self.host + '/' + self.index + '/_mapping/' + self.doc_type, json=mappings).json()
-        if res.get('acknowledged') != True:
+        if not res.get('acknowledged'):
             raise RuntimeError('cannot create mappings: %s' % res)
 
         self.open_index()
-
 
     def setup_analyzer(self):
         """Create customized analyser into the new type (short index downtime)."""
@@ -109,12 +106,11 @@ class IndexSynchronizer:
         analyser = self.analyzer_config()
         res = r.put(self.host + '/' + self.index + '/_settings', json=analyser).json()
 
-        if res.get('acknowledged') != True:
+        if not res.get('acknowledged'):
             raise RuntimeError('cannot add analyzer: %s' % res)
         logger.info('setup analyzer')
 
         self.open_index()
-
 
     def synchronize(self):
         """Reindex entries to new analysed type."""
@@ -122,38 +118,34 @@ class IndexSynchronizer:
         reindex = self.synchronize_config()
         res = r.post(self.host + '/_reindex', json=reindex).json()
 
-        if res.get('timed_out') != False:
+        if res.get('timed_out'):
             raise RuntimeError('timeout during reindexing: %s' % res)
         logger.info('reindex %s to %s terminated: %d created, %d updated', self.src_index, self.index,
                     res['created'], res['updated'])
 
-
     def open_index(self):
         """Open an index or raise an exception."""
         res = r.post(self.host + '/' + self.index + '/_open').json()
-        if res.get('acknowledged') != True:
+        if not res.get('acknowledged'):
             raise RuntimeError('cannot open index: %s' % res)
         logger.info('open index %s', self.index)
-
 
     def close_index(self):
         """Close an index or raise an exception."""
         res = r.post(self.host + '/' + self.index + '/_close').json()
-        if res.get('acknowledged') != True:
+        if not res.get('acknowledged'):
             raise RuntimeError('cannot close index: %s' % res)
         logger.info('close index %s', self.index)
-
 
     def parse_stopwords(self, filename):
         """Parse stopwords in given file eliminating comment and empty lines."""
         with open(filename) as f:
             return [l for l in f.read().splitlines() if not l.startswith('#') and len(l)]
 
-
     def synchronize_config(self):
         """Return query data for reindexing an index to itself (changing type)."""
         selector_script = {}
-        if self.selector_script != None:
+        if self.selector_script is not None:
             selector_script['script'] = {
                 'script': self.selector_script
             }
@@ -197,7 +189,6 @@ class IndexSynchronizer:
                 "type": self.doc_type
             }
         }
-
 
     def analyzer_config(self):
         """Return query data for adding an analyzer."""

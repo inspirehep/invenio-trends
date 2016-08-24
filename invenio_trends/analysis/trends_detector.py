@@ -48,9 +48,8 @@ class TrendsDetector:
         self.analysis_field = config['analysis_field']
         self.doc_type = config['doc_type']
 
-
-    def run_pipeline(self, reference_date, granularity, foreground_window, background_window, minimum_frequency_threshold,
-                     smoothing_len, num_cluster, num_trends):
+    def run_pipeline(self, reference_date, granularity, foreground_window, background_window,
+                     minimum_frequency_threshold, smoothing_len, num_cluster, num_trends):
         """Run pipeline to find trends given parameters."""
         foreground_start = reference_date - foreground_window * granularity.value
         background_start = reference_date - background_window * granularity.value
@@ -66,7 +65,6 @@ class TrendsDetector:
 
         return trends
 
-
     def interval_ids(self, start, end):
         """Retrieve list of ids occurring between start and end."""
         q = Search(using=self.client, index=self.index) \
@@ -74,7 +72,6 @@ class TrendsDetector:
             .filter('exists', field=self.analysis_field) \
             .filter('range', **{self.date_field: {'gt': start, 'lte': end}})
         return [elem.meta.id for elem in q.scan()]
-
 
     def term_vectors(self, ids, chunk=100):
         """Retrieve all terms together with their stats."""
@@ -112,12 +109,10 @@ class TrendsDetector:
                     }
         return words
 
-
     def sorting_freq_threshold(self, terms, min_freq_threshold):
         """Eliminated low frequency and sort dict into a list of tuple according to their frequency."""
         filtered = [(term, stats) for term, stats in terms.items() if stats['doc_freq'] >= min_freq_threshold]
         return sorted(filtered, key=lambda elem: -elem[1]['doc_freq'])
-
 
     def terms_histograms(self, terms, start, end, gran):
         """Retrieve all term histogram and normalize them."""
@@ -129,7 +124,6 @@ class TrendsDetector:
                 hists.append((term, stats, self.normalize_histogram(hist, hist_reference)))
         return hists
 
-
     def hist_scores(self, hists, foreground_start, smoothing_window):
         """Apply moving average and compute z-score relative to foreground."""
         scores = []
@@ -137,7 +131,6 @@ class TrendsDetector:
             score = self.transform_score(hist, foreground_start, smoothing_window)
             scores.append((term, stats, score))
         return scores
-
 
     def classify_scores(self, scores, num_cluster):
         """Extract best trending score cluster."""
@@ -152,18 +145,16 @@ class TrendsDetector:
                 selected.append((term, stats, hist))
         return selected
 
-
     def prune_scores(self, scores, num_trends):
         """Compute newness and keep only selected."""
         newest = sorted(scores, key=lambda x: -x[1]['doc_freq'] / x[1]['doc_total'])
         return newest[:num_trends]
 
-
     def date_histogram(self, start, end, granularity, term=None):
         """Retrieve the date histogram of all entries or a single term is given."""
         q = Search(using=self.client, index=self.index)[0:0] \
             .filter('range', **{self.date_field: {'gt': start, 'lte': end}})
-        if term != None:
+        if term is not None:
             q = q.query('match_phrase', **{self.analysis_field: term})
         q.aggs.bucket(
             'hist',
@@ -180,9 +171,8 @@ class TrendsDetector:
         x, y = zip(*[(parse_iso_date(elem.key_as_string), elem.doc_count) for elem in hist])
         return np.array(x), np.array(y)
 
-
     def normalize_histogram(self, hist_numerator, hist_denumerator):
-        """Safely normalize given tuple of lists w.r.t. another. Numerator's size will be fitted to denumerator's one."""
+        """Safely normalize given tuple of lists w.r.t. another. Numerator size will be fitted to denumerator one."""
         x, y = hist_numerator
         x_ref, y_ref = hist_denumerator
 
@@ -194,7 +184,6 @@ class TrendsDetector:
             res = np.divide(y, y_ref)
             res[~ np.isfinite(res)] = 0
             return x_ref, res
-
 
     def transform_score(self, hist, foreground_start, smoothing_window):
         """Score using moving average and z-score w.r.t. foreground."""
