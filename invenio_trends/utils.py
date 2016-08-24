@@ -22,10 +22,26 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-"""Flask utilities."""
+"""Project utilities."""
 
 from werkzeug.routing import BaseConverter
-from .analysis.utils import parse_iso_date
+from datetime import datetime
+
+
+def print_iso_date(obj):
+    """Print given date to ISO8601 without timezone."""
+    if isinstance(obj, list):
+        return [print_iso_date(e) for e in obj]
+    return obj.isoformat()
+
+
+def parse_iso_date(str):
+    """Parse given date to ISO8601 without timezone."""
+    try:
+        return datetime.strptime(str, '%Y-%m-%dT%H:%M:%S.%f')
+    except:
+        return datetime.strptime(str, '%Y-%m-%dT%H:%M:%S.%fZ')
+
 
 class DatetimeConverter(BaseConverter):
     """Datetime/url converter."""
@@ -34,4 +50,4 @@ class DatetimeConverter(BaseConverter):
         return parse_iso_date(value)
 
     def to_url(self, value):
-        return BaseConverter.to_url(str(value))
+        return BaseConverter.to_url(self, str(value))

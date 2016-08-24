@@ -30,7 +30,7 @@ from elasticsearch import Elasticsearch
 from sklearn.cluster import KMeans
 
 from invenio_trends.analysis.granularity import Granularity
-from invenio_trends.analysis.utils import parse_iso_date, safe_divide
+from invenio_trends.utils import parse_iso_date
 from elasticsearch_dsl import Search
 import numpy as np
 
@@ -194,7 +194,10 @@ class TrendsDetector:
         after_count = len(x_ref) - np.where(x_ref == x[-1])[0][0] - 1
         y = np.append(np.zeros(before_count), np.append(y, np.zeros(after_count)))
 
-        return x_ref, safe_divide(y, y_ref)
+        with np.errstate(divide='ignore', invalid='ignore'):
+            res = np.divide(y, y_ref)
+            res[~ np.isfinite(res)] = 0
+            return x_ref, res
 
 
     def transform_score(self, hist, foreground_start, smoothing_window):

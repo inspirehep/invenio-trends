@@ -47,3 +47,8 @@ TRENDS_PARAMS = {
     'maximum_ngram': 3,
     'stopwords_file': os.path.dirname(analysis.__file__) + '/stopwords.txt',
 }
+
+WORD2VEC_URL = 'http://magpie.inspirehep.net/api/word2vec'
+WORD2VEC_TIMEOUT = 0.2 # seconds
+WORD2VEC_THRES = 0.7
+WORD2VEC_MAX = 5
