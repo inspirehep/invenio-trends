@@ -51,6 +51,8 @@ class TrendsDetector:
     def run_pipeline(self, reference_date, granularity, foreground_window, background_window,
                      minimum_frequency_threshold, smoothing_len, num_cluster, num_trends):
         """Run pipeline to find trends given parameters."""
+        logger.info('running trends pipeline for %s, %s over %s by %s', reference_date, foreground_window,
+                     background_window, granularity)
         foreground_start = reference_date - foreground_window * granularity.value
         background_start = reference_date - background_window * granularity.value
         smoothing_window = np.ones(smoothing_len)
@@ -62,11 +64,11 @@ class TrendsDetector:
         scores = self.hist_scores(hists, foreground_start, smoothing_window)
         trending = self.classify_scores(scores, num_cluster)
         trends = self.prune_scores(trending, num_trends)
-
         return trends
 
     def interval_ids(self, start, end):
         """Retrieve list of ids occurring between start and end."""
+        logger.info('retrieving ids from %s to %s', start, end)
         q = Search(using=self.client, index=self.index) \
             .fields(['']) \
             .filter('exists', field=self.analysis_field) \
@@ -75,6 +77,9 @@ class TrendsDetector:
 
     def term_vectors(self, ids, chunk=100):
         """Retrieve all terms together with their stats."""
+        if not len(ids):
+            return []
+        logger.info('retrieving term vectors for %s ids', len(ids))
         vectors = []
         for pos in range(0, len(ids), chunk):
             q = self.client.mtermvectors(
@@ -111,21 +116,29 @@ class TrendsDetector:
 
     def sorting_freq_threshold(self, terms, min_freq_threshold):
         """Eliminated low frequency and sort dict into a list of tuple according to their frequency."""
+        if not len(terms):
+            return []
+        logger.info('thresholding %s terms with minimum %s', len(terms), min_freq_threshold)
         filtered = [(term, stats) for term, stats in terms.items() if stats['doc_freq'] >= min_freq_threshold]
         return sorted(filtered, key=lambda elem: -elem[1]['doc_freq'])
 
     def terms_histograms(self, terms, start, end, gran):
         """Retrieve all term histogram and normalize them."""
+        if not len(terms):
+            return []
         hist_reference = self.date_histogram(start, end, gran)
         hists = []
         for term, stats in terms:
             hist = self.date_histogram(start, end, gran, term=term)
+            logger.info('retrieving %s histogram bins for %s', len(hist[0]), term)
             if len(hist[0]):
                 hists.append((term, stats, self.normalize_histogram(hist, hist_reference)))
         return hists
 
     def hist_scores(self, hists, foreground_start, smoothing_window):
         """Apply moving average and compute z-score relative to foreground."""
+        if not len(hists):
+            return []
         scores = []
         for term, stats, hist in hists:
             score = self.transform_score(hist, foreground_start, smoothing_window)
@@ -134,8 +147,11 @@ class TrendsDetector:
 
     def classify_scores(self, scores, num_cluster):
         """Extract best trending score cluster."""
+        if not len(scores):
+            return []
         km = KMeans(n_clusters=num_cluster)
         values_only = [score for term, stats, (date, score) in scores]
+        logger.info('classifying %s values', len(values_only))
         pred = km.fit_predict(values_only)
         clusters = km.cluster_centers_
         trending_cluster = np.argmax(np.max(np.gradient(clusters, axis=1), axis=1))
@@ -147,6 +163,8 @@ class TrendsDetector:
 
     def prune_scores(self, scores, num_trends):
         """Compute newness and keep only selected."""
+        if not len(scores):
+            return []
         newest = sorted(scores, key=lambda x: -x[1]['doc_freq'] / x[1]['doc_total'])
         return newest[:num_trends]
 

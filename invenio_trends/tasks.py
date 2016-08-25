@@ -68,11 +68,14 @@ def update_trends():
         num_cluster=TRENDS_NUM_CLUSTER,
         num_trends=TRENDS_NUM
     )
+    if not len(trends):
+        return
     terms, dates = zip(*[(term, date) for term, stats, (date, score) in trends])
+    logger.info('trends detected: %s', terms)
     mapping = {
         'terms': terms,
-        'start': min(dates),
-        'end': max(dates),
-        'granularity': TRENDS_GRANULARITY
+        'start': min(dates[0]),
+        'end': max(dates[0]),
+        'granularity': TRENDS_GRANULARITY.name
     }
     assert(1, redis.hmset(TRENDS_REDIS_KEY, mapping))
