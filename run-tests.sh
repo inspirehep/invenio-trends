@@ -25,7 +25,6 @@
 
 
 pydocstyle invenio_trends && \
-isort -rc -c -df **/*.py && \
 check-manifest --ignore ".travis-*" && \
 sphinx-build -qnNW docs docs/_build/html && \
 python setup.py test && \
