@@ -48,7 +48,7 @@ PARAMS = {
     'analysis_field': analysis_field,
     'date_field': date_field,
     'id_field': id_field,
-    'tokenizer': 'icu_tokenizer',
+    'tokenizer': 'standard',
     'minimum_date': '2015-03-01',
     'maximum_date': '2015-04-01',
     'filter_script': "d = doc['date'].date; d.getDayOfMonth() != 3",
@@ -99,6 +99,7 @@ def test_parse_stopwords():
 
 def test_setup_index():
     index_sync.setup_index()
+    sleep(2)
     res = r.get(host + '/' + index).json()
     assert index in res
 

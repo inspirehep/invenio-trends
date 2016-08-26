@@ -55,7 +55,7 @@ class TrendsDetector:
                      minimum_frequency_threshold, smoothing_len, num_cluster, num_trends):
         """Run pipeline to find trends given parameters."""
         logger.debug('running trends pipeline for %s, %s over %s by %s', reference_date, foreground_window,
-                    background_window, granularity)
+                     background_window, granularity)
         foreground_start = reference_date - foreground_window * granularity.value
         background_start = reference_date - background_window * granularity.value
         smoothing_window = np.ones(smoothing_len)

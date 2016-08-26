@@ -120,8 +120,8 @@ class IndexSynchronizer:
 
         if res.get('timed_out'):
             raise RuntimeError('timeout during reindexing: %s' % res)
-        logger.info('reindex %s to %s terminated: %d created, %d updated', self.src_index, self.index,
-                    res['created'], res['updated'])
+        logger.info('reindex %s to %s terminated: %s created, %s updated', self.src_index, self.index,
+                    res.get('created'), res.get('updated'))
 
     def open_index(self):
         """Open an index or raise an exception."""

@@ -149,6 +149,7 @@ def search(query, start=None, end=None, gran=None, similar_words=False, return_s
     }
     return jsonify(ret)
 
+
 def word2vec(term):
     """Fetch associates words and select them following their matching scores."""
     try:
