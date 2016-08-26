@@ -22,46 +22,4 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-
-notifications:
-  email: false
-
-sudo: false
-
-language: python
-
-cache:
-  - pip
-
-env:
-  - REQUIREMENTS=lowest
-
-python:
-  - "2.7"
-  - "3.5"
-
-addons:
-  apt:
-    sources:
-      - elasticsearch-2.x
-    packages:
-      - elasticsearch
-
-services:
-  - elasticsearch
-
-before_install:
-  - "travis_retry pip install --upgrade pip setuptools py"
-  - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
-  - "sleep 10"
-
-install:
-  - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -e .[all]"
-
-script:
-  - "./run-tests.sh"
-
-after_success:
-  - coveralls
+"""ETL package."""

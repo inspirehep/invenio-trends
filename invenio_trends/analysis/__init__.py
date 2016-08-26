@@ -22,25 +22,4 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
-
-"""Minimal Flask application example for development.
-
-Run example development server:
-
-.. code-block:: console
-
-   $ cd examples
-   $ flask -a app.py --debug run
-"""
-
-from __future__ import absolute_import, print_function
-
-from flask import Flask
-from flask_babelex import Babel
-
-from invenio_trends import InvenioTrends
-
-# Create Flask application
-app = Flask(__name__)
-Babel(app)
-InvenioTrends(app)
+"""Analysis package."""

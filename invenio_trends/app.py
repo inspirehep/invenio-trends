@@ -23,45 +23,26 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 
-notifications:
-  email: false
+"""Minimal Flask application example for development.
 
-sudo: false
+Run example development server:
 
-language: python
+.. code-block:: console
 
-cache:
-  - pip
+   $ export FLASK_APP=invenio_trends/app.py
+   $ export DEBUG=1
+   $ flask run
+"""
 
-env:
-  - REQUIREMENTS=lowest
+import logging
+import os
 
-python:
-  - "2.7"
-  - "3.5"
+from flask import Flask
+from flask.ext.cors import CORS
+from flask_babelex import Babel
 
-addons:
-  apt:
-    sources:
-      - elasticsearch-2.x
-    packages:
-      - elasticsearch
+logging.basicConfig(level=logging.DEBUG if os.getenv('DEBUG') == 1 else logging.INFO)
 
-services:
-  - elasticsearch
-
-before_install:
-  - "travis_retry pip install --upgrade pip setuptools py"
-  - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
-  - "sleep 10"
-
-install:
-  - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -e .[all]"
-
-script:
-  - "./run-tests.sh"
-
-after_success:
-  - coveralls
+app = Flask(__name__)
+CORS(app)
+Babel(app)

@@ -47,6 +47,14 @@ extras_require = {
         'Sphinx>=1.4.2',
     ],
     'tests': tests_require,
+    'development': [
+        'Flask-DebugToolbar>=0.9',
+        'ipython',
+        'honcho',
+        'gunicorn',
+        'pylab',
+        'wordcloud'
+    ],
 }
 
 extras_require['all'] = []
@@ -54,16 +62,22 @@ for reqs in extras_require.values():
     extras_require['all'].extend(reqs)
 
 setup_requires = [
-    'Babel>=1.3',
     'pytest-runner>=2.6.2',
 ]
 
 install_requires = [
     'Flask-BabelEx>=0.9.2',
+    'flask-cors>=3.0.0',
+    'elasticsearch-dsl>=2.1.0',
+    'numpy>=1.11.1',
+    'enum34>=1.1.6',
+    'redis>=2.10.5',
+    'celery>=3.1.23',
+    'scipy>=0.18.0',
+    'scikit-learn>=0.17.1',
 ]
 
 packages = find_packages()
-
 
 # Get the version string. Cannot be done with import!
 g = {}
@@ -76,33 +90,22 @@ setup(
     version=version,
     description=__doc__,
     long_description=readme + '\n\n' + history,
-    keywords='invenio TODO',
+    keywords='invenio, trends, analysis, elasticsearch, ngrams',
     license='GPLv2',
     author='CERN',
     author_email='teo.stocco@cern.ch',
-    url='https://github.com/inspirehep/trends',
+    url='https://github.com/inspirehep/invenio-trends',
     packages=packages,
     zip_safe=False,
     include_package_data=True,
     platforms='any',
     entry_points={
-        'invenio_base.apps': [
-            'invenio_trends = invenio_trends:InvenioTrends',
+        'invenio_base.api_blueprints': [
+            'invenio_trends = invenio_trends.views:blueprint'
         ],
-        'invenio_i18n.translations': [
-            'messages = invenio_trends',
+        'invenio_celery.tasks': [
+            'invenio_trends = invenio_trends.tasks'
         ],
-        # TODO: Edit these entry points to fit your needs.
-        # 'invenio_access.actions': [],
-        # 'invenio_admin.actions': [],
-        # 'invenio_assets.bundles': [],
-        # 'invenio_base.api_apps': [],
-        # 'invenio_base.api_blueprints': [],
-        # 'invenio_base.blueprints': [],
-        # 'invenio_celery.tasks': [],
-        # 'invenio_db.models': [],
-        # 'invenio_pidstore.minters': [],
-        # 'invenio_records.jsonresolver': [],
     },
     extras_require=extras_require,
     install_requires=install_requires,

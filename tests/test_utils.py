@@ -22,46 +22,26 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
+"""Utils tests."""
 
-notifications:
-  email: false
+from datetime import datetime
 
-sudo: false
+import numpy as np
+from invenio_trends.utils import parse_iso_date
 
-language: python
 
-cache:
-  - pip
+def test_parse_iso_date():
+    date = parse_iso_date('2015-02-05T08:47:22.01Z')
+    assert date == parse_iso_date('2015-02-05T08:47:22.01')
+    assert date.year == 2015
+    assert date.month == 2
+    assert date.day == 5
+    assert date.hour == 8
+    assert date.minute == 47
+    assert date.second == 22
+    assert date.microsecond == 10000
 
-env:
-  - REQUIREMENTS=lowest
 
-python:
-  - "2.7"
-  - "3.5"
-
-addons:
-  apt:
-    sources:
-      - elasticsearch-2.x
-    packages:
-      - elasticsearch
-
-services:
-  - elasticsearch
-
-before_install:
-  - "travis_retry pip install --upgrade pip setuptools py"
-  - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
-  - "sleep 10"
-
-install:
-  - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -e .[all]"
-
-script:
-  - "./run-tests.sh"
-
-after_success:
-  - coveralls
+def test_parse_iso_date_loop():
+    date = datetime(2016, 4, 8, 9, 48, 23, 20000)
+    assert date == parse_iso_date(date.isoformat())

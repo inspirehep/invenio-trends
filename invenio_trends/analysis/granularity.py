@@ -22,46 +22,19 @@
 # waive the privileges and immunities granted to it by virtue of its status
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
+"""Granularity mappings."""
 
-notifications:
-  email: false
+from datetime import timedelta
+from enum import Enum
 
-sudo: false
 
-language: python
+class Granularity(Enum):
+    """Model granularity mapping between elasticsearch string value and python datetime."""
 
-cache:
-  - pip
-
-env:
-  - REQUIREMENTS=lowest
-
-python:
-  - "2.7"
-  - "3.5"
-
-addons:
-  apt:
-    sources:
-      - elasticsearch-2.x
-    packages:
-      - elasticsearch
-
-services:
-  - elasticsearch
-
-before_install:
-  - "travis_retry pip install --upgrade pip setuptools py"
-  - "travis_retry pip install twine wheel coveralls requirements-builder"
-  - "requirements-builder --level=min setup.py > .travis-lowest-requirements.txt"
-  - "sleep 10"
-
-install:
-  - "travis_retry pip install -r .travis-${REQUIREMENTS}-requirements.txt"
-  - "travis_retry pip install -e .[all]"
-
-script:
-  - "./run-tests.sh"
-
-after_success:
-  - coveralls
+    second = timedelta(seconds=1)
+    minute = timedelta(minutes=1)
+    hour = timedelta(hours=1)
+    day = timedelta(days=1)
+    week = timedelta(weeks=1)
+    month = timedelta(hours=730)
+    year = timedelta(hours=8760)

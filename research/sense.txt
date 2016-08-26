@@ -1,0 +1,360 @@
+
+POST records-hep/_search
+{
+    "query": {
+        "match_all" : {}
+    },
+    "filter": {
+        "range": {
+            "earliest_date": {
+                "gte": "1975-01-01"
+            }
+        }
+    },
+    "_source": [
+        "self_recid",
+        "titles.title",
+        "references.recid",
+        "abstracts.value",
+        "earliest_date",
+        "creation_modification_date",
+        "preprint_date"
+    ]
+}
+
+POST /_reindex
+{
+  "source": {
+    "index": "records-hep",
+    "type": "hep",
+    "query": {
+        "bool": {
+            "must_not": {
+                "match": {
+                    "titles.title": "withdrawn or canceled"
+                }
+            },
+            "filter": {
+                "range": {
+                    "earliest_date": {
+                        "gte": "1975-01-01"
+                    }
+                }
+            }
+        }
+    },
+    "_source": [
+        "self_recid",
+        "titles.title",
+        "references.recid",
+        "abstracts.value",
+        "earliest_date",
+        "creation_modification_date",
+        "preprint_date"
+    ]
+  },
+  "dest": {
+    "index": "hep-slim",
+    "type": "hep"
+  }
+}
+
+GET hep-slim/_mapping/
+{
+   "hep-slim": {
+      "mappings": {
+         "hep": {
+            "properties": {
+               "abstracts": {
+                  "properties": {
+                     "value": {
+                        "type": "string"
+                     }
+                  }
+               },
+               "creation_modification_date": {
+                  "properties": {
+                     "creation_date": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_millis"
+                     },
+                     "modification_date": {
+                        "type": "date",
+                        "format": "strict_date_optional_time||epoch_millis"
+                     }
+                  }
+               },
+               "earliest_date": {
+                  "type": "date",
+                  "format": "strict_date_optional_time||epoch_millis"
+               },
+               "preprint_date": {
+                  "type": "date",
+                  "format": "strict_date_optional_time||epoch_millis"
+               },
+               "references": {
+                  "properties": {
+                     "recid": {
+                        "type": "long"
+                     }
+                  }
+               },
+               "self_recid": {
+                  "type": "long"
+               },
+               "titles": {
+                  "properties": {
+                     "title": {
+                        "type": "string"
+                     }
+                  }
+               }
+            }
+         }
+      }
+   }
+}
+
+POST hep-slim/_search
+{
+    "fields": [
+        "earliest_date"
+    ],
+    "query": {
+        "bool": {
+            "filter" : {
+                "script": {
+                    "script": "d = doc['earliest_date'].date; d.getDayOfMonth() == 1"
+                }
+            }
+        }
+    }
+}
+
+POST hep-slim/_search
+{
+   "query": {
+        "bool": {
+            "filter" : {
+                "script": {
+                    "script": "d = doc['earliest_date'].date; d.getDayOfMonth() != 1"
+                }
+            }
+        }
+    },
+    "size": 0,
+    "aggregations" : {
+        "references" : {
+            "terms": {
+                "field": "references.recid",
+                "size": 0
+            },
+            "aggregations": {
+                "min_earliest_date": {
+                    "min" : {
+                        "field" : "earliest_date"
+                    }
+                },
+                "min_preprint_date": {
+                    "min" : {
+                        "field" : "preprint_date"
+                    }
+                },
+                "min_modification_date": {
+                    "min" : {
+                        "field" : "creation_modification_date.modification_date"
+                    }
+                },
+                "min_creation_date": {
+                    "min" : {
+                        "field" : "creation_modification_date.creation_date"
+                    }
+                }
+            }
+        }
+    }
+}
+
+POST /_reindex
+{
+  "source": {
+    "index": "records-hep",
+    "type": "hep",
+    "query": {
+        "bool": {
+            "must_not": {
+                "match": {
+                    "titles.title": "withdrawn or canceled"
+                }
+            },
+            "filter": {
+                "range": {
+                    "earliest_date": {
+                        "gte": "2013-02-01",
+                        "lte": "2016-06-01"
+                    }
+                }
+            }
+        }
+    },
+    "_source": [
+        "self_recid",
+        "titles.title",
+        "abstracts.value",
+        "earliest_date"
+    ]
+  },
+  "dest": {
+    "index": "hep-recent",
+    "type": "hep"
+  }
+}
+
+PUT /hep-analysis
+{
+   "settings": {
+      "analysis": {
+         "analyzer": {
+            "custom_analyzer": {
+               "type": "custom",
+               "tokenizer": "icu_tokenizer",
+               "filter": [
+                    "lowercase",
+                    "custom_word_delimiter",
+                    "custom_number_removal",
+                    "custom_stop",
+                    "custom_stemmer",
+                    "custom_length",
+                    "custom_bigram",
+                    "custom_spacing_removal",
+                    "trim"
+                ],
+                "char_filter": [
+                    "html_strip"
+                ]
+            }
+         },
+         "filter": {
+            "custom_word_delimiter": {
+                "type": "word_delimiter",
+                "generate_word_parts": false,
+                "generate_number_parts": true,
+                "catenate_words": true,
+                "catenate_numbers": true,
+                "catenate_all": false,
+                "preserve_original": false,
+                "split_on_case_change": false,
+                "split_on_numerics": false,
+                "stem_english_possessive": true
+            },
+            "custom_number_removal": {
+                "type": "pattern_replace",
+                "pattern": "([0-9]+)",
+                "replacement": ""
+            },
+            "custom_spacing_removal": {
+                "type": "pattern_replace",
+                "pattern": "( +)",
+                "replacement": " "
+            },
+            "custom_stop": {
+                "type": "stop",
+                "stopwords": ["a","about","above","after","again","against","all","am","an","and","any","are","aren't","as","at","be","because","been","before","being","below","between","both","but","by","can't","cannot","could","couldn't","did","didn't","do","does","doesn't","doing","don't","down","during","each","few","for","from","further","had","hadn't","has","hasn't","have","haven't","having","he","he'd","he'll","he's","her","here","here's","hers","herself","him","himself","his","how","how's","i","i'd","i'll","i'm","i've","if","in","into","is","isn't","it","it's","its","itself","let's","me","more","most","mustn't","my","myself","no","nor","not","of","off","on","once","only","or","other","ought","our","ours","ourselves","out","over","own","same","shan't","she","she'd","she'll","she's","should","shouldn't","so","some","such","than","that","that's","the","their","theirs","them","themselves","then","there","there's","these","they","they'd","they'll","they're","they've","this","those","through","to","too","under","until","up","very","was","wasn't","we","we'd","we'll","we're","we've","were","weren't","what","what's","when","when's","where","where's","which","while","who","who's","whom","why","why's","with","won't","would","wouldn't","you","you'd","you'll","you're","you've","your","yours","yourself","yourselves"],
+                "ignore_case": true,
+                "remove_trailing": true
+            },
+            "custom_stemmer" : {
+                "type": "stemmer",
+                "name": "light_english"
+            },
+            "custom_bigram" : {
+                "type" : "shingle",
+                "min_shingle_size": 2,
+                "max_shingle_size": 3,
+                "output_unigrams": true,
+                "filler_token": ""
+            },
+            "custom_length": {
+                "type": "length",
+                "min": 2
+            }
+        }
+      }
+   },
+   "mappings": {
+        "hep": {
+            "properties": {
+                "abstracts": {
+                    "properties": {
+                        "value": {
+                            "type": "string",
+                            "term_vector": "yes",
+                            "analyzer": "custom_analyzer"
+                        }
+                    }
+                },
+                "earliest_date": {
+                    "type": "date",
+                    "format": "strict_date_optional_time||epoch_millis"
+                },
+                "self_recid": {
+                    "type": "long"
+                },
+                "titles": {
+                    "properties": {
+                        "title": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        }
+   }
+}
+
+POST /_reindex
+{
+    "source": {
+        "index": "records-hep",
+        "type": "hep",
+        "query": {
+            "bool": {
+                "must_not": {
+                    "match": {
+                        "titles.title": "withdrawn or canceled"
+                    }
+                },
+                "filter": [
+                    {
+                        "range": {
+                            "earliest_date": {
+                                "gte": "2013-02-01",
+                                "lte": "2016-06-01"
+                            }
+                        }
+                    },
+                    {
+                        "script": {
+                            "script": "d = doc['earliest_date'].date; d.getDayOfYear() != 1"
+                        }
+                    },
+                    {
+                        "exists": {
+                            "field": "abstracts.value"
+                        }
+                    }
+                ]
+            }
+        },
+        "_source": [
+            "self_recid",
+            "titles.title",
+            "abstracts.value",
+            "earliest_date"
+        ]
+    },
+    "dest": {
+        "index": "hep-analysis",
+        "type": "hep"
+    }
+}

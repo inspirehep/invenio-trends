@@ -22,24 +22,27 @@
     as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 ================
- Invenio-Trends
+ Invenio Trends
 ================
 
-.. image:: https://img.shields.io/travis/inspirehep/trends.svg
-        :target: https://travis-ci.org/inspirehep/trends
+.. image:: https://img.shields.io/travis/inspirehep/invenio-trends.svg
+        :target: https://travis-ci.org/inspirehep/invenio-trends
 
-.. image:: https://img.shields.io/coveralls/inspirehep/trends.svg
-        :target: https://coveralls.io/r/inspirehep/trends
+.. image:: https://img.shields.io/coveralls/inspirehep/invenio-trends.svg
+        :target: https://coveralls.io/r/inspirehep/invenio-trends
 
-.. image:: https://img.shields.io/github/tag/inspirehep/trends.svg
-        :target: https://github.com/inspirehep/trends/releases
+.. image:: https://img.shields.io/github/tag/inspirehep/invenio-trends.svg
+        :target: https://github.com/inspirehep/invenio-trends/releases
 
 .. image:: https://img.shields.io/pypi/dm/invenio-trends.svg
         :target: https://pypi.python.org/pypi/invenio-trends
 
-.. image:: https://img.shields.io/github/license/inspirehep/trends.svg
-        :target: https://github.com/inspirehep/trends/blob/master/LICENSE
+.. image:: https://img.shields.io/github/license/inspirehep/invenio-trends.svg
+        :target: https://github.com/inspirehep/invenio-trends/blob/master/LICENSE
 
+.. image:: https://badges.gitter.im/inspirehep/invenio-trends.svg
+   :alt: Join the chat at https://gitter.im/inspirehep/invenio-trends
+   :target: https://gitter.im/inspirehep/invenio-trends?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 Invenio module that adds a trends api to the platform.
 
@@ -47,8 +50,3 @@ Invenio module that adds a trends api to the platform.
 
 * Free software: GPLv2 license
 * Documentation: https://pythonhosted.org/invenio-trends/
-
-
-.. image:: https://badges.gitter.im/inspirehep/invenio-trends.svg
-   :alt: Join the chat at https://gitter.im/inspirehep/invenio-trends
-   :target: https://gitter.im/inspirehep/invenio-trends?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge

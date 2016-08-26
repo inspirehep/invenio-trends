@@ -32,5 +32,5 @@ Happy hacking and thanks for flying Invenio-Trends.
 |   Email: info@inveniosoftware.org
 |   IRC: #invenio on irc.freenode.net
 |   Twitter: http://twitter.com/inveniosoftware
-|   GitHub: https://github.com/inspirehep/trends
+|   GitHub: https://github.com/inspirehep/invenio-trends
 |   URL: http://inveniosoftware.org
