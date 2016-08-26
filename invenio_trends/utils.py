@@ -43,7 +43,12 @@ def parse_iso_date(str):
     try:
         return datetime.strptime(str, '%Y-%m-%dT%H:%M:%S.%f')
     except:
+        pass
+    try:
         return datetime.strptime(str, '%Y-%m-%dT%H:%M:%S.%fZ')
+    except:
+        pass
+    return datetime.strptime(str, '%Y-%m-%dT%H:%M:%S')
 
 
 class DatetimeConverter(BaseConverter):

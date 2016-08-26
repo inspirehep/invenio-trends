@@ -24,6 +24,8 @@
 
 """Trends detector."""
 
+from __future__ import division
+
 import logging
 
 from elasticsearch import Elasticsearch
@@ -33,6 +35,7 @@ from sklearn.cluster import KMeans
 from invenio_trends.utils import parse_iso_date
 from elasticsearch_dsl import Search
 import numpy as np
+
 
 logger = logging.getLogger(__name__)
 
@@ -51,8 +54,8 @@ class TrendsDetector:
     def run_pipeline(self, reference_date, granularity, foreground_window, background_window,
                      minimum_frequency_threshold, smoothing_len, num_cluster, num_trends):
         """Run pipeline to find trends given parameters."""
-        logger.info('running trends pipeline for %s, %s over %s by %s', reference_date, foreground_window,
-                     background_window, granularity)
+        logger.debug('running trends pipeline for %s, %s over %s by %s', reference_date, foreground_window,
+                    background_window, granularity)
         foreground_start = reference_date - foreground_window * granularity.value
         background_start = reference_date - background_window * granularity.value
         smoothing_window = np.ones(smoothing_len)
@@ -68,7 +71,7 @@ class TrendsDetector:
 
     def interval_ids(self, start, end):
         """Retrieve list of ids occurring between start and end."""
-        logger.info('retrieving ids from %s to %s', start, end)
+        logger.debug('retrieving ids from %s to %s', start, end)
         q = Search(using=self.client, index=self.index) \
             .fields(['']) \
             .filter('exists', field=self.analysis_field) \
@@ -79,7 +82,7 @@ class TrendsDetector:
         """Retrieve all terms together with their stats."""
         if not len(ids):
             return []
-        logger.info('retrieving term vectors for %s ids', len(ids))
+        logger.debug('retrieving term vectors for %s ids', len(ids))
         vectors = []
         for pos in range(0, len(ids), chunk):
             q = self.client.mtermvectors(
@@ -118,7 +121,7 @@ class TrendsDetector:
         """Eliminated low frequency and sort dict into a list of tuple according to their frequency."""
         if not len(terms):
             return []
-        logger.info('thresholding %s terms with minimum %s', len(terms), min_freq_threshold)
+        logger.debug('thresholding %s terms with minimum %s', len(terms), min_freq_threshold)
         filtered = [(term, stats) for term, stats in terms.items() if stats['doc_freq'] >= min_freq_threshold]
         return sorted(filtered, key=lambda elem: -elem[1]['doc_freq'])
 
@@ -130,7 +133,7 @@ class TrendsDetector:
         hists = []
         for term, stats in terms:
             hist = self.date_histogram(start, end, gran, term=term)
-            logger.info('retrieving %s histogram bins for %s', len(hist[0]), term)
+            logger.debug('retrieving %s histogram bins for %s', len(hist[0]), term)
             if len(hist[0]):
                 hists.append((term, stats, self.normalize_histogram(hist, hist_reference)))
         return hists
@@ -151,7 +154,7 @@ class TrendsDetector:
             return []
         km = KMeans(n_clusters=num_cluster)
         values_only = [score for term, stats, (date, score) in scores]
-        logger.info('classifying %s values', len(values_only))
+        logger.debug('classifying %s values', len(values_only))
         pred = km.fit_predict(values_only)
         clusters = km.cluster_centers_
         trending_cluster = np.argmax(np.max(np.gradient(clusters, axis=1), axis=1))
@@ -166,6 +169,7 @@ class TrendsDetector:
         if not len(scores):
             return []
         newest = sorted(scores, key=lambda x: -x[1]['doc_freq'] / x[1]['doc_total'])
+        logger.info(newest)
         return newest[:num_trends]
 
     def date_histogram(self, start, end, granularity, term=None):

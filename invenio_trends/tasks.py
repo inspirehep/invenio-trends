@@ -73,9 +73,9 @@ def update_trends():
     terms, dates = zip(*[(term, date) for term, stats, (date, score) in trends])
     logger.info('trends detected: %s', terms)
     mapping = {
-        'terms': terms,
-        'start': min(dates[0]),
-        'end': max(dates[0]),
+        'terms': ','.join(terms),
+        'start': min(dates[0]).isoformat(),
+        'end': max(dates[0]).isoformat(),
         'granularity': TRENDS_GRANULARITY.name
     }
     assert(1, redis.hmset(TRENDS_REDIS_KEY, mapping))

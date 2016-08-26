@@ -27,20 +27,21 @@
 import logging
 from datetime import datetime
 
+import numpy as np
 import requests as r
 from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
-from flask import Blueprint, jsonify, make_response
+from flask import Blueprint, jsonify, make_response, request
 from redis import StrictRedis
 
 from .analysis.granularity import Granularity
 from .analysis.trends_detector import TrendsDetector
 from .config import CACHE_REDIS_URL, MAGPIE_API_URL, SEARCH_ELASTIC_HOSTS, \
-    TRENDS_BACKGROUND_WINDOW, TRENDS_DATE_FIELD, TRENDS_ENDPOINT, \
-    TRENDS_FOREGROUND_WINDOW, TRENDS_GRANULARITY, TRENDS_HIST_GRANULARITY, \
+    TRENDS_DATE_FIELD, TRENDS_ENDPOINT, TRENDS_HIST_GRANULARITY, \
     TRENDS_INDEX, TRENDS_PARAMS, TRENDS_REDIS_KEY, WORD2VEC_MAX, \
-    WORD2VEC_THRES, WORD2VEC_TIMEOUT
-from .utils import DatetimeConverter, GranularityConverter, return_iso_date
+    WORD2VEC_THRES, WORD2VEC_TIMEOUT, TRENDS_FOREGROUND_WINDOW, TRENDS_SMOOTHING_LEN
+from .utils import DatetimeConverter, GranularityConverter, parse_iso_date, \
+    return_iso_date
 
 logger = logging.getLogger(__name__)
 client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
@@ -77,11 +78,29 @@ def dates():
 
 
 @blueprint.route('/search/<string:query>/')
-@blueprint.route('/search/<string:query>/<string:start>')
-@blueprint.route('/search/<string:query>/<string:start>/<string:end>')
-@blueprint.route('/search/<string:query>/<datetime:start>/<string:end>/<granularity:gran>')
-def search(query, start=None, end=None, gran=None, similar_words=True):
-    """Search index for given query string and return corresponding histograms with associated words."""
+@blueprint.route('/search/<string:query>/<datetime:start>')
+@blueprint.route('/search/<string:query>/<datetime:start>/<datetime:end>')
+@blueprint.route('/search/<string:query>/<datetime:start>/<datetime:end>/<granularity:gran>')
+def search_trends(query, start=None, end=None, gran=None):
+    """Return histogram matching query."""
+    similar_words = request.args.get('similar_words') is not None
+    return_score = request.args.get('return_score') is not None
+    return search(query, start, end, gran, similar_words, return_score)
+
+
+@blueprint.route('/emerging')
+def emerging_trends():
+    """Return cached latest trends."""
+    cached = redis.hmget(TRENDS_REDIS_KEY, 'terms', 'start', 'end', 'granularity')
+    if cached[0] is None:
+        return jsonify({})
+
+    terms, start, end, gran = cached
+    return search(terms, parse_iso_date(start), parse_iso_date(end), Granularity[gran])
+
+
+def search(query, start=None, end=None, gran=None, similar_words=False, return_score=False):
+    """Search index for given query string and return corresponding histograms."""
     if not gran:
         gran = TRENDS_HIST_GRANULARITY
 
@@ -106,11 +125,15 @@ def search(query, start=None, end=None, gran=None, similar_words=True):
     data = []
     for term in all_terms:
         dates, values = td.date_histogram(start, end, gran, term)
+        if return_score:
+            values = np.nan_to_num((values - np.mean(values)) / np.std(values))
+
         if len(values):
             minValue = min(minValue, min(values))
             maxValue = max(maxValue, max(values))
             minDate = min(minDate, min(dates))
             maxDate = max(maxDate, max(dates))
+
         series = [{'date': return_iso_date(date), 'value': value} for date, value in zip(dates, values)]
         data.append({'name': term, 'series': series})
 
@@ -125,18 +148,6 @@ def search(query, start=None, end=None, gran=None, similar_words=True):
         'data': data
     }
     return jsonify(ret)
-
-
-@blueprint.route('/emerging')
-def emerging_trends():
-    """Return cached latest trends."""
-    cached = redis.hmget(TRENDS_REDIS_KEY, 'terms', 'start', 'end', 'granularity')
-    if not len(cached):
-        return jsonify({})
-
-    terms, start, end, gran = cached
-    return search(terms, start, end, gran, False)
-
 
 def word2vec(term):
     """Fetch associates words and select them following their matching scores."""
