@@ -56,9 +56,9 @@ Introduction
 
 This is a summer student project carried out at the [European Organization for Nuclear Research, CERN](http://home.cern). It was supervised by [Eamonn Maguire](https://github.com/eamonnmag) during summer 2016.
 
-The project's goal was to build a trends detection pipeline based on [Inspirehep dataset](), an open source digital library for high energy physics publications developped at (CERN)[].  More than 1.2 millions papers since the 1970s can be browsed either using the [current](http://inspirehep.net) or [future](https://labs.inspirehep.net) interface.
+The project's goal was to build a trends detection pipeline based on Inspirehep dataset, an open source digital library for high energy physics publications developped at CERN.  More than 1.2 millions papers since the 1970s can be browsed either using the [current](http://inspirehep.net) or [future](https://labs.inspirehep.net) interface.
 
-This project suggests an approach to analyze noisy time series based on ngrams extracted from any textual source in near real-time. Although it is mainly designed to process InspireHEP data, it can easily be adjusted and generalized to any other systems based on (elasticsearch)[].
+This project suggests an approach to analyze noisy time series based on ngrams extraction in near real-time. Although it is mainly designed to process InspireHEP data, it can easily be adjusted and generalized to any other systems based on [elasticsearch](https://www.elastic.co/products/elasticsearch).
 
 Infrastructure
 --------------

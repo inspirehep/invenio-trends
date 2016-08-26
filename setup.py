@@ -67,14 +67,14 @@ setup_requires = [
 
 install_requires = [
     'Flask-BabelEx>=0.9.2',
-    'flask-cors',
-    'elasticsearch',
-    'numpy',
-    'enum34',
-    'redis',
-    'celery',
-    'scipy',
-    'scikit-learn',
+    'flask-cors>=3.0.0',
+    'elasticsearch>=2.4.0',
+    'numpy>=1.11.1',
+    'enum34>=1.1.6',
+    'redis>=2.10.5',
+    'celery>=3.1.23',
+    'scipy>=0.18.0',
+    'scikit-learn>=0.17.1',
 ]
 
 packages = find_packages()
