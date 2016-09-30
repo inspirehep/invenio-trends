@@ -25,12 +25,8 @@
 """Index synchronizer."""
 
 import logging
-
-import invenio_trends
 import requests as r
-
-from invenio_trends import analysis
-from invenio_trends.config import SEARCH_ELASTIC_HOSTS
+from flask import current_app
 
 logger = logging.getLogger(__name__)
 
@@ -38,26 +34,26 @@ logger = logging.getLogger(__name__)
 class IndexSynchronizer:
     """Synchronization helper for maintaining another index type with customized analyser."""
 
-    def __init__(self, config):
+    def __init__(self):
         """Unwrapping configuration defined in config.py."""
-        self.host = 'http://' + SEARCH_ELASTIC_HOSTS[0]
+        self.host = 'http://' + current_app.config['SEARCH_ELASTIC_HOSTS'][0]
 
-        self.index = config['index']
-        self.src_index = config['source_index']
-        self.doc_type = config['doc_type']
-        self.analysis_fld = config['analysis_field']
-        self.date_fld = config['date_field']
-        self.id_fld = config['id_field']
+        self.index = current_app.config['TRENDS_INDEX']
+        self.src_index = current_app.config['TRENDS_SOURCE_INDEX']
+        self.doc_type = current_app.config['TRENDS_DOC_TYPE']
+        self.analysis_fld = current_app.config['TRENDS_ANALYSIS_FIELD']
+        self.date_fld = current_app.config['TRENDS_DATE_FIELD']
+        self.id_fld = current_app.config['TRENDS_ID_FIELD']
 
-        self.tokenizer = config['tokenizer']
-        self.min_date = config['minimum_date']
-        self.max_date = config['maximum_date']
-        self.selector_script = config['filter_script']
+        self.tokenizer = current_app.config['TRENDS_TOKENIZER']
+        self.min_date = current_app.config['TRENDS_MINIMUM_DATE']
+        self.max_date = current_app.config['TRENDS_MAXIMUM_DATE']
+        self.selector_script = current_app.config['TRENDS_FILTER_SCRIPT']
 
-        self.unigram = config['unigram']
-        self.min_ngram = config['minimum_ngram']
-        self.max_ngram = config['maximum_ngram']
-        self.stopwords_file = config['stopwords_file']
+        self.unigram = current_app.config['TRENDS_UNIGRAM']
+        self.min_ngram = current_app.config['TRENDS_MINIMUM_NGRAM']
+        self.max_ngram = current_app.config['TRENDS_MAXIMUM_NGRAM']
+        self.stopwords_file = current_app.config['TRENDS_STOPWORDS_FILE']
 
     def setup_index(self):
         """Create analysis index if it does not exist yet."""
@@ -116,7 +112,10 @@ class IndexSynchronizer:
         """Reindex entries to new analysed type."""
         logger.info('reindex %s to %s started', self.src_index, self.index)
         reindex = self.synchronize_config()
+        print(reindex)
         res = r.post(self.host + '/_reindex', json=reindex).json()
+
+        print res
 
         if res.get('timed_out'):
             raise RuntimeError('timeout during reindexing: %s' % res)
@@ -169,8 +168,7 @@ class IndexSynchronizer:
                             {
                                 "range": {
                                     self.date_fld: {
-                                        "gt": self.min_date,
-                                        "lte": self.max_date
+                                        "gt": self.min_date
                                     }
                                 }
                             },

@@ -30,10 +30,6 @@ from datetime import timedelta
 from invenio_trends import etl
 from invenio_trends.analysis.granularity import Granularity
 
-SEARCH_ELASTIC_HOSTS = os.environ.get('SEARCH_ELASTIC_HOSTS', 'localhost:9200').split(';')
-MAGPIE_API_URL = 'http://magpie.inspirehep.net/api'
-CACHE_REDIS_URL = os.environ.get('CACHE_REDIS_URL', 'redis://localhost:6379/0')
-
 WORD2VEC_TIMEOUT = 0.2  # seconds
 WORD2VEC_THRES = 0.7
 WORD2VEC_MAX = 5
@@ -63,7 +59,7 @@ TRENDS_MAXIMUM_DATE = None
 TRENDS_FILTER_SCRIPT = "d = doc['earliest_date'].date; d.getDayOfYear() != 1"
 TRENDS_UNIGRAM = False
 TRENDS_MINIMUM_NGRAM = 2
-TRENDS_MAXIMUM_NGM = 3
+TRENDS_MAXIMUM_NGRAM = 3
 TRENDS_STOPWORDS_FILE = os.path.dirname(etl.__file__) + '/stopwords.txt'
 
 TRENDS_HIST_GRANULARITY = Granularity.week
@@ -76,20 +72,3 @@ TRENDS_MINIMUM_FREQUENCY_THRESHOLD = 5
 TRENDS_SMOOTHING_LEN = 7
 TRENDS_NUM_CLUSTER = 3
 TRENDS_NUM = 9
-
-TRENDS_PARAMS = {
-    'index': TRENDS_INDEX,
-    'source_index': TRENDS_SOURCE_INDEX,
-    'doc_type': TRENDS_DOC_TYPE,
-    'analysis_field': TRENDS_ANALYSIS_FIELD,
-    'date_field': TRENDS_DATE_FIELD,
-    'id_field': TRENDS_ID_FIELD,
-    'tokenizer': TRENDS_TOKENIZER,
-    'minimum_date': TRENDS_MINIMUM_DATE,
-    'maximum_date': TRENDS_MAXIMUM_DATE,
-    'filter_script': TRENDS_FILTER_SCRIPT,
-    'unigram': TRENDS_UNIGRAM,
-    'minimum_ngram': TRENDS_MINIMUM_NGRAM,
-    'maximum_ngram': TRENDS_MAXIMUM_NGM,
-    'stopwords_file': TRENDS_STOPWORDS_FILE,
-}

@@ -29,13 +29,12 @@ from __future__ import division
 import logging
 
 from elasticsearch import Elasticsearch
-from invenio_trends.config import SEARCH_ELASTIC_HOSTS
+from flask import current_app
 from sklearn.cluster import KMeans
 
 from invenio_trends.utils import parse_iso_date
 from elasticsearch_dsl import Search
 import numpy as np
-
 
 logger = logging.getLogger(__name__)
 
@@ -43,13 +42,13 @@ logger = logging.getLogger(__name__)
 class TrendsDetector:
     """Trends analyzer and extractor."""
 
-    def __init__(self, config):
+    def __init__(self):
         """Set up a new trends detector."""
-        self.client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
-        self.index = config['index']
-        self.date_field = config['date_field']
-        self.analysis_field = config['analysis_field']
-        self.doc_type = config['doc_type']
+        self.client = Elasticsearch(hosts=current_app.config['SEARCH_ELASTIC_HOSTS'])
+        self.index = current_app.config['TRENDS_INDEX']
+        self.date_field = current_app.config['TRENDS_DATE_FIELD']
+        self.analysis_field = current_app.config['TRENDS_ANALYSIS_FIELD']
+        self.doc_type = current_app.config['TRENDS_DOC_TYPE']
 
     def run_pipeline(self, reference_date, granularity, foreground_window, background_window,
                      minimum_frequency_threshold, smoothing_len, num_cluster, num_trends):
@@ -185,6 +184,7 @@ class TrendsDetector:
             interval=granularity.name,
             format='date_optional_time'
         )
+
         hist = q.execute().aggregations.hist.buckets
 
         if not len(hist):

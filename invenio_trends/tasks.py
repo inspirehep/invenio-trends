@@ -28,25 +28,27 @@ import logging
 from datetime import datetime
 
 from celery import shared_task
+from flask import current_app
+from flask.ext.cli import with_appcontext
 from redis import StrictRedis
+from werkzeug.local import LocalProxy
 
 from invenio_trends.analysis.trends_detector import TrendsDetector
 from invenio_trends.etl.index_synchronizer import IndexSynchronizer
 
-from .config import CACHE_REDIS_URL, TRENDS_BACKGROUND_WINDOW, \
-    TRENDS_FOREGROUND_WINDOW, TRENDS_GRANULARITY, \
-    TRENDS_MINIMUM_FREQUENCY_THRESHOLD, TRENDS_NUM, TRENDS_NUM_CLUSTER, \
-    TRENDS_PARAMS, TRENDS_REDIS_KEY, TRENDS_SMOOTHING_LEN
-
 logger = logging.getLogger(__name__)
-redis = StrictRedis.from_url(CACHE_REDIS_URL)
+
+
+def get_config():
+    return current_app.config
 
 
 @shared_task(ignore_result=True)
+@with_appcontext
 def update_index():
     """Synchronize index to refresh all new entries into the trends index."""
     logging.info('updating index')
-    index_sync = IndexSynchronizer(TRENDS_PARAMS)
+    index_sync = IndexSynchronizer()
     index_sync.setup_index()
     index_sync.setup_analyzer()
     index_sync.setup_mappings()
@@ -54,28 +56,35 @@ def update_index():
 
 
 @shared_task(ignore_result=True)
+@with_appcontext
 def update_trends():
     """Compute trends for the current day and cache them."""
+
+    config = LocalProxy(get_config)
+
+    redis = StrictRedis.from_url(config['CACHE_REDIS_URL'])
+
     logging.info('updating trends')
-    td = TrendsDetector(TRENDS_PARAMS)
+    td = TrendsDetector()
     trends = td.run_pipeline(
         reference_date=datetime.now(),
-        granularity=TRENDS_GRANULARITY,
-        foreground_window=TRENDS_FOREGROUND_WINDOW,
-        background_window=TRENDS_BACKGROUND_WINDOW,
-        minimum_frequency_threshold=TRENDS_MINIMUM_FREQUENCY_THRESHOLD,
-        smoothing_len=TRENDS_SMOOTHING_LEN,
-        num_cluster=TRENDS_NUM_CLUSTER,
-        num_trends=TRENDS_NUM
+        granularity=config['TRENDS_GRANULARITY'],
+        foreground_window=config['TRENDS_FOREGROUND_WINDOW'],
+        background_window=config['TRENDS_BACKGROUND_WINDOW'],
+        minimum_frequency_threshold=config['TRENDS_MINIMUM_FREQUENCY_THRESHOLD'],
+        smoothing_len=config['TRENDS_SMOOTHING_LEN'],
+        num_cluster=config['TRENDS_NUM_CLUSTER'],
+        num_trends=config['TRENDS_NUM']
     )
     if not len(trends):
         return
     terms, dates = zip(*[(term, date) for term, stats, (date, score) in trends])
+
     logger.info('trends detected: %s', terms)
     mapping = {
         'terms': ','.join(terms),
         'start': min(dates[0]).isoformat(),
         'end': max(dates[0]).isoformat(),
-        'granularity': TRENDS_GRANULARITY.name
+        'granularity': config['TRENDS_GRANULARITY'].name
     }
-    assert(1, redis.hmset(TRENDS_REDIS_KEY, mapping))
+    assert (1, redis.hmset(config['TRENDS_REDIS_KEY'], mapping))

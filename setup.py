@@ -69,6 +69,8 @@ install_requires = [
     'Flask-BabelEx>=0.9.2',
     'flask-cors>=3.0.0',
     'elasticsearch-dsl>=2.1.0',
+    'invenio-base',
+    'invenio-search',
     'numpy>=1.11.1',
     'enum34>=1.1.6',
     'redis>=2.10.5',
@@ -82,7 +84,7 @@ packages = find_packages()
 # Get the version string. Cannot be done with import!
 g = {}
 with open(os.path.join('invenio_trends', 'version.py'), 'rt') as fp:
-    exec(fp.read(), g)
+    exec (fp.read(), g)
     version = g['__version__']
 
 setup(
@@ -100,6 +102,12 @@ setup(
     include_package_data=True,
     platforms='any',
     entry_points={
+        'invenio_base.apps': [
+            'invenio_trends = invenio_trends:InvenioTrends',
+        ],
+        'invenio_base.api_apps': [
+            'invenio_trends = invenio_trends:InvenioTrends',
+        ],
         'invenio_base.api_blueprints': [
             'invenio_trends = invenio_trends.views:blueprint'
         ],

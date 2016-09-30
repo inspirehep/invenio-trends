@@ -29,23 +29,18 @@ from datetime import datetime
 
 import numpy as np
 import requests as r
-from elasticsearch import Elasticsearch
 from elasticsearch_dsl import Search
-from flask import Blueprint, jsonify, make_response, request
+from flask import Blueprint, jsonify, make_response, request, current_app
 from redis import StrictRedis
 
 from .analysis.granularity import Granularity
 from .analysis.trends_detector import TrendsDetector
-from .config import CACHE_REDIS_URL, MAGPIE_API_URL, SEARCH_ELASTIC_HOSTS, \
-    TRENDS_DATE_FIELD, TRENDS_ENDPOINT, TRENDS_HIST_GRANULARITY, \
-    TRENDS_INDEX, TRENDS_PARAMS, TRENDS_REDIS_KEY, WORD2VEC_MAX, \
-    WORD2VEC_THRES, WORD2VEC_TIMEOUT, TRENDS_FOREGROUND_WINDOW, TRENDS_SMOOTHING_LEN
 from .utils import DatetimeConverter, GranularityConverter, parse_iso_date, \
     return_iso_date
 
+from invenio_search.proxies import current_search_client
+
 logger = logging.getLogger(__name__)
-client = Elasticsearch(hosts=SEARCH_ELASTIC_HOSTS)
-redis = StrictRedis.from_url(CACHE_REDIS_URL)
 
 
 def register_converters(state):
@@ -53,10 +48,11 @@ def register_converters(state):
     state.app.url_map.converters['datetime'] = DatetimeConverter
     state.app.url_map.converters['granularity'] = GranularityConverter
 
+
 blueprint = Blueprint(
     'invenio_trends',
     __name__,
-    url_prefix=TRENDS_ENDPOINT,
+    url_prefix='/trends',
 )
 blueprint.record_once(register_converters)
 
@@ -67,12 +63,30 @@ def granularities():
     return jsonify(list(Granularity.__members__))
 
 
+def get_params():
+    return {
+        'index': current_app.config['TRENDS_INDEX'],
+        'source_index': current_app.config['TRENDS_SOURCE_INDEX'],
+        'doc_type': current_app.config['TRENDS_DOC_TYPE'],
+        'analysis_field': current_app.config['TRENDS_ANALYSIS_FIELD'],
+        'date_field': current_app.config['TRENDS_DATE_FIELD'],
+        'id_field': current_app.config['TRENDS_ID_FIELD'],
+        'tokenizer': current_app.config['TRENDS_TOKENIZER'],
+        'minimum_date': current_app.config['TRENDS_MINIMUM_DATE'],
+        'maximum_date': current_app.config['TRENDS_MAXIMUM_DATE'],
+        'filter_script': current_app.config['TRENDS_FILTER_SCRIPT'],
+        'unigram': current_app.config['TRENDS_UNIGRAM'],
+        'minimum_ngram': current_app.config['TRENDS_MINIMUM_NGRAM'],
+        'maximum_ngram': current_app.config['TRENDS_MAXIMUM_NGRAM'],
+        'stopwords_file': current_app.config['TRENDS_STOPWORDS_FILE']}
+
+
 @blueprint.route('/dates')
 def dates():
     """Return maximum and minimum date from dataset."""
-    q = Search(using=client, index=TRENDS_INDEX)[0:0]
-    q.aggs.bucket('min_date', 'min', field=TRENDS_DATE_FIELD)
-    q.aggs.bucket('max_date', 'max', field=TRENDS_DATE_FIELD)
+    q = Search(using=current_search_client, index=current_app.config['TRENDS_INDEX'])[0:0]
+    q.aggs.bucket('min_date', 'min', field=current_app.config['TRENDS_DATE_FIELD'])
+    q.aggs.bucket('max_date', 'max', field=current_app.config['TRENDS_DATE_FIELD'])
     res = q.execute().aggregations
     return jsonify({'maximum': res.min_date.value_as_string, 'minimum': res.max_date.value_as_string})
 
@@ -91,7 +105,9 @@ def search_trends(query, start=None, end=None, gran=None):
 @blueprint.route('/emerging')
 def emerging_trends():
     """Return cached latest trends."""
-    cached = redis.hmget(TRENDS_REDIS_KEY, 'terms', 'start', 'end', 'granularity')
+    redis = StrictRedis.from_url(current_app.config['CACHE_REDIS_URL'])
+
+    cached = redis.hmget(current_app.config['TRENDS_REDIS_KEY'], 'terms', 'start', 'end', 'granularity')
     if cached[0] is None:
         return jsonify({})
 
@@ -101,14 +117,15 @@ def emerging_trends():
 
 def search(query, start=None, end=None, gran=None, similar_words=False, return_score=False):
     """Search index for given query string and return corresponding histograms."""
+
     if not gran:
-        gran = TRENDS_HIST_GRANULARITY
+        gran = current_app.config['TRENDS_HIST_GRANULARITY']
 
     terms = [t.strip() for t in query.split(',') if len(t.strip())]
     if not len(terms):
         return bad_request('no terms')
 
-    td = TrendsDetector(TRENDS_PARAMS)
+    td = TrendsDetector()
     minValue = 0
     maxValue = 0
     minDate = end if end else datetime.max
@@ -116,6 +133,7 @@ def search(query, start=None, end=None, gran=None, similar_words=False, return_s
 
     all_terms = []
     related_terms = {}
+
     for term in terms:
         similarities = word2vec(term) if similar_words else []
         related_terms[term] = similarities
@@ -154,12 +172,13 @@ def word2vec(term):
     """Fetch associates words and select them following their matching scores."""
     try:
         data = {'corpus': 'keywords', 'positive': [term.replace(' ', '')], 'negative': []}
-        res = r.post(MAGPIE_API_URL + '/word2vec', json=data, timeout=WORD2VEC_TIMEOUT).json()
+        res = r.post(current_app.config['MAGPIE_API_URL'] + '/word2vec', json=data,
+                     timeout=current_app.config['WORD2VEC_TIMEOUT']).json()
         similarities = []
         for word, score in sorted(res['vector'], key=lambda e: -e[1]):
-            if score >= WORD2VEC_THRES and term not in word:
+            if score >= current_app.config['WORD2VEC_THRES'] and term not in word:
                 similarities.append(word.replace('-', ' '))
-        return similarities[:WORD2VEC_MAX]
+        return similarities[:current_app.config['WORD2VEC_MAX']]
     except Exception as e:
         logger.error(e)
         return []

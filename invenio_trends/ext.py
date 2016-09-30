@@ -23,9 +23,9 @@
 # as an Intergovernmental Organization or submit itself to any jurisdiction.
 
 """Invenio module that adds a trends api to the platform."""
-
+from invenio_trends.cli import trends
+from . import config
 from .views import blueprint
-
 
 class InvenioTrends(object):
     """Invenio-Trends extension."""
@@ -40,6 +40,19 @@ class InvenioTrends(object):
         self.init_config(app)
         app.register_blueprint(blueprint)
         app.extensions['invenio-trends'] = self
+        app.cli.add_command(trends, 'trends')
 
     def init_config(self, app):
         """Initialize configuration."""
+        app.config.setdefault(
+            'SEARCH_ELASTIC_HOSTS', ['localhost:9200'])
+
+        app.config.setdefault(
+            'CACHE_REDIS_URL', 'redis://localhost:6379/0')
+
+        app.config.setdefault(
+            'MAGPIE_API_URL', 'http://magpie.inspirehep.net/api')
+
+        for k in dir(config):
+            if k.startswith('TRENDS_') or k.startswith('WORD2VEC'):
+                app.config.setdefault(k, getattr(config, k))
